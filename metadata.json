@@ -1,0 +1,6 @@
+{
+  "name": "Jonathan's Child Care & JCC FC Management Hub",
+  "description": "Comprehensive institutional, academic, Science & Math laboratory, child welfare, and JCC FC football management system in Bo District, Sierra Leone.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

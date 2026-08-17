@@ -1,6 +1,7 @@
 export type ModuleTab =
   | 'overview'
   | 'school'
+  | 'orphanage'
   | 'science-lab'
   | 'jcc-fc'
   | 'community'
@@ -10,6 +11,7 @@ export type ModuleTab =
 export type UserRole =
   | 'Director / Administrator'
   | 'Head Teacher'
+  | 'Welfare & Orphanage Officer'
   | 'JCC FC Coach'
   | 'STEM Lab Specialist'
   | 'Community Sponsor';
@@ -31,10 +33,79 @@ export interface SubjectGrade {
   teacherComment?: string;
 }
 
+export type SchoolTier = 'Nursery' | 'Primary' | 'Secondary';
+
+export type PaymentPlanType = 'Full Payment' | '2-Part Installment' | '3-Part Installment' | 'Custom';
+
+export type FeeStatus = 'Fully Paid' | 'Partially Paid' | 'Outstanding' | 'Scholarship Exemption';
+
+export interface FeeInstallment {
+  id: string;
+  installmentNumber: number;
+  title: string; // e.g. "1st Installment (Enrollment Deposit)", "2nd Installment (Mid-Term)", "3rd Installment (Final Term Exam)"
+  amountDue: number;
+  amountPaid: number;
+  dueDate: string;
+  paidDate?: string;
+  status: 'Paid' | 'Partial' | 'Pending' | 'Overdue';
+  receiptNumber?: string;
+  paymentMethod?: 'Cash (Bursary Office)' | 'Orange Money' | 'Afrimoney' | 'Bank Transfer (Rokel Bank)' | 'Scholarship / Sponsor';
+  notes?: string;
+}
+
+export interface PaymentTransaction {
+  id: string;
+  date: string;
+  amount: number;
+  installmentTitle: string;
+  paymentMethod: string;
+  receiptNumber: string;
+  recordedBy: string;
+  notes?: string;
+}
+
+export type NotificationChannel =
+  | 'SMS / Mobile Network (+232 Sierra Leone)'
+  | 'WhatsApp Guardian Direct'
+  | 'School Email Alert'
+  | 'Official Printed Installment Notice';
+
+export type NotificationUrgency =
+  | 'Overdue Notice (Immediate Action)'
+  | 'Due Imminent (Within 7 Days)'
+  | 'Upcoming Mid-Term Deadline (14-30 Days)'
+  | 'Partial Payment Balance Reminder'
+  | 'Payment Received & Official Receipt';
+
+export type NotificationDeliveryStatus = 'Delivered' | 'Scheduled' | 'Pending Dispatch' | 'Draft';
+
+export interface FeeNotification {
+  id: string;
+  studentId: string;
+  studentName: string;
+  guardianName: string;
+  guardianPhone: string;
+  schoolTier: SchoolTier;
+  gradeLevel: string;
+  installmentId?: string;
+  installmentTitle: string;
+  amountDue: number;
+  dueDate: string;
+  daysRemaining: number; // negative if overdue
+  urgency: NotificationUrgency;
+  channel: NotificationChannel;
+  status: NotificationDeliveryStatus;
+  sentDate?: string;
+  messageText: string;
+  automatedTrigger: boolean;
+  notes?: string;
+}
+
 export interface Student {
   id: string;
   name: string;
-  gradeLevel: string; // e.g. "Primary 5", "JSS 2"
+  schoolTier: SchoolTier; // 'Nursery' | 'Primary' | 'Secondary'
+  gradeLevel: string; // e.g. "Nursery 2", "Class 4", "JSS 2 (STEM Track)", "SSS 2 (Science)"
   age: number;
   gender: 'Female' | 'Male';
   guardianName: string;
@@ -45,6 +116,16 @@ export interface Student {
   scholarshipStatus: 'Full Sponsor' | 'Partial Sponsor' | 'Self-Funded';
   grades: SubjectGrade[];
   avatar: string;
+
+  // School Fees & Installment Ledger
+  currency: string; // "NLe"
+  totalTermFee: number;
+  totalPaid: number;
+  remainingBalance: number;
+  feeStatus: FeeStatus;
+  paymentPlan: PaymentPlanType;
+  installments: FeeInstallment[];
+  transactions?: PaymentTransaction[];
 }
 
 export interface LabEquipment {
@@ -77,6 +158,9 @@ export interface Player {
   jerseyNumber: number;
   age: number;
   appearances: number;
+  starts?: number;
+  subAppearances?: number;
+  minutesPlayed?: number;
   goals: number;
   assists: number;
   cleanSheets?: number;
@@ -84,6 +168,17 @@ export interface Player {
   overallRating: number; // 1-99
   schoolAlumni: boolean; // Graduated from or currently attending JCC School
   photo: string;
+}
+
+export interface MatchPlayerParticipation {
+  playerId: string;
+  playerName: string;
+  position: string;
+  started: boolean;
+  minutes: number;
+  goals: number;
+  assists: number;
+  rating: number;
 }
 
 export interface Match {
@@ -99,6 +194,9 @@ export interface Match {
   isHome: boolean;
   tacticalSetup?: string;
   highlights?: string[];
+  attendance?: number;
+  result?: 'Win' | 'Draw' | 'Loss';
+  playerParticipations?: MatchPlayerParticipation[];
 }
 
 export interface Trophy {
@@ -144,3 +242,122 @@ export interface Sponsorship {
   recurringPeriod: 'Monthly' | 'Annual' | 'One-Time';
   impactNote: string;
 }
+
+export interface EnrollmentDataPoint {
+  month: string;
+  shortMonth: string;
+  total: number;
+  primarySchool: number;
+  jssStem: number;
+  girls: number;
+  boys: number;
+  newAdmissions: number;
+  attendanceRate: number;
+}
+
+// ==========================================
+// ORPHANAGE & CHILD WELFARE MANAGEMENT TYPES
+// ==========================================
+
+export type OrphanCategory =
+  | 'Double Orphan (Both Parents Deceased)'
+  | 'Maternal Orphan'
+  | 'Paternal Orphan'
+  | 'Vulnerable Child (Kinship Care)'
+  | 'Emergency Protective Custody';
+
+export type ResidentialPlacement =
+  | 'JCC Bo Home (Cottage A - Girls)'
+  | 'JCC Bo Home (Cottage B - Boys)'
+  | 'JCC Bo Early Years Cottage'
+  | 'Kinship Caregiver Home (Bo District)'
+  | 'Supported Foster Family';
+
+export type DailyCareRoutineStatus = 'Completed' | 'Pending' | 'Flagged';
+
+export interface DailyCareNeeds {
+  dietaryPlan: string;
+  morningMedicationOrSupplements?: string;
+  clothingAndUniformStatus: 'Adequate' | 'Needs New Uniform' | 'Needs Shoes' | 'Disbursed';
+  beddingAndHygieneKit: 'Good Condition' | 'Restocked' | 'Needs Replacement';
+  emotionalCounselingStatus: 'Weekly Session Active' | 'Stable & Nurtured' | 'Trauma Care Active';
+  schoolTransport: 'JCC Bo Walking Group' | 'JCC Campus Shuttle' | 'Guided Escort';
+  specialDietaryNeeds?: string;
+  lastCareReviewDate: string;
+}
+
+export interface GuardianInfo {
+  guardianName: string;
+  relation: 'Grandmother' | 'Aunt' | 'Uncle' | 'Appointed Legal Guardian' | 'JCC House Mother / Father' | 'Kinship Cousin';
+  contactNumber: string;
+  communityLocation: string; // e.g. "Tikonko Road, Bo City"
+  legalStatus: 'Formal Custody under Ministry (MSWGCA)' | 'Recognized Kinship Care' | 'Institutional Custody (JCC Ministries)';
+  voterOrNationalId?: string;
+  lastHomeVisitDate?: string;
+  caseworkerNotes?: string;
+}
+
+export interface WelfareCaseLog {
+  id: string;
+  date: string;
+  officerName: string;
+  category: 'Emotional Well-being' | 'Medical & Health Check' | 'Academic Progress' | 'Guardian & Kinship Visit' | 'Nutrition & Growth' | 'Trauma-Informed Care';
+  notes: string;
+  urgency: 'Routine Observation' | 'Follow-up Required' | 'Urgent Intervention';
+  actionTaken?: string;
+}
+
+export interface HealthAndVaccination {
+  bloodGroup?: string;
+  allergies?: string;
+  vaccinationsCompleted: string[];
+  lastMedicalExamDate: string;
+  weightKg: number;
+  heightCm: number;
+  bmi: number;
+  healthStatus: 'Optimal' | 'Mild Infection / Treated' | 'Under Observation';
+  clinicExaminedBy: string;
+}
+
+export interface OrphanRecord {
+  id: string; // e.g. "ORP-101"
+  studentId?: string; // Links to Student database (e.g. "STU-N101", "STU-102")
+  fullName: string;
+  gender: 'Female' | 'Male';
+  dateOfBirth: string;
+  age: number;
+  admissionDate: string;
+  orphanCategory: OrphanCategory;
+  schoolTier: SchoolTier;
+  gradeLevel: string;
+  residentialPlacement: ResidentialPlacement;
+  cottageOrDorm: string;
+  houseParentName: string;
+  privacyLevel: 'Strict Confidential' | 'Protected Standard' | 'Public Sponsor Eligible';
+  avatar: string;
+  
+  ministryRegistrationNumber: string; // Official Ministry of Social Welfare identifier (MSWGCA)
+  
+  dailyCare: DailyCareNeeds;
+  guardian: GuardianInfo;
+  health: HealthAndVaccination;
+  caseLogs: WelfareCaseLog[];
+  
+  sponsorLinked?: {
+    sponsorName: string;
+    sponsorCountry: string;
+    annualSupportUSD: number;
+    lastLetterDate?: string;
+  };
+
+  // Daily check status flags for caregiver shift tracking
+  todayDailyChecklist?: {
+    morningNutrition: boolean;
+    medicationCheck: boolean;
+    schoolReadiness: boolean;
+    eveningStudyAndWelfare: boolean;
+    nightCareCheck: boolean;
+  };
+}
+
+

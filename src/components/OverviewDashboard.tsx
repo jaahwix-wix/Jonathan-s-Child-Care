@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { ModuleTab, Student, Player, Match, Trophy as TrophyType, CommunityEvent, InstagramPost } from '../types';
 import { ASSET_IMAGES } from '../data/mockData';
+import { EnrollmentTrendChart } from './EnrollmentTrendChart';
 
 interface OverviewDashboardProps {
   setActiveTab: (tab: ModuleTab) => void;
@@ -195,6 +196,9 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
           </div>
         </div>
       </div>
+
+      {/* 12-Month Student Enrollment Trend Data Visualization */}
+      <EnrollmentTrendChart onNavigateToSchool={() => setActiveTab('school')} />
 
       {/* Dual Spotlight Section: School & Football */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

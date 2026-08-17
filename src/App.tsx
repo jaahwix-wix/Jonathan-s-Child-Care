@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Navbar } from './components/Navbar';
 import { OverviewDashboard } from './components/OverviewDashboard';
 import { SchoolManagement } from './components/SchoolManagement';
+import { OrphanageManagement } from './components/OrphanageManagement';
 import { ScienceLabPortal } from './components/ScienceLabPortal';
 import { JccFcManagement } from './components/JccFcManagement';
 import { CommunityEventsHub } from './components/CommunityEventsHub';
@@ -21,10 +22,14 @@ import {
   InstagramPost,
   Sponsorship,
   UserSession,
+  OrphanRecord,
+  FeeNotification,
+  NotificationUrgency,
 } from './types';
 
 import {
   INITIAL_STUDENTS,
+  INITIAL_ORPHANS,
   INITIAL_LAB_EQUIPMENT,
   INITIAL_LAB_SESSIONS,
   INITIAL_PLAYERS,
@@ -35,6 +40,7 @@ import {
   INITIAL_SPONSORSHIPS,
   DEFAULT_USERS,
   ASSET_IMAGES,
+  INITIAL_FEE_NOTIFICATIONS,
 } from './data/mockData';
 
 export default function App() {
@@ -46,14 +52,16 @@ export default function App() {
 
   // Application Dynamic State
   const [students, setStudents] = useState<Student[]>(INITIAL_STUDENTS);
+  const [orphans, setOrphans] = useState<OrphanRecord[]>(INITIAL_ORPHANS);
   const [labEquipment, setLabEquipment] = useState<LabEquipment[]>(INITIAL_LAB_EQUIPMENT);
   const [labSessions, setLabSessions] = useState<LabSession[]>(INITIAL_LAB_SESSIONS);
   const [players, setPlayers] = useState<Player[]>(INITIAL_PLAYERS);
   const [matches, setMatches] = useState<Match[]>(INITIAL_MATCHES);
   const [events, setEvents] = useState<CommunityEvent[]>(INITIAL_EVENTS);
   const [sponsorships, setSponsorships] = useState<Sponsorship[]>(INITIAL_SPONSORSHIPS);
+  const [notifications, setNotifications] = useState<FeeNotification[]>(INITIAL_FEE_NOTIFICATIONS);
 
-  // Handlers
+  // Student CRUD Handlers
   const handleAddStudent = (newStudent: Student) => {
     setStudents((prev) => [newStudent, ...prev]);
   };
@@ -62,6 +70,49 @@ export default function App() {
     setStudents((prev) => prev.map((s) => (s.id === updatedStudent.id ? updatedStudent : s)));
   };
 
+  const handleDeleteStudent = (studentId: string) => {
+    setStudents((prev) => prev.filter((s) => s.id !== studentId));
+  };
+
+  // Fee Notification CRUD Handlers
+  const handleAddNotification = (notif: FeeNotification) => {
+    setNotifications((prev) => [notif, ...prev]);
+  };
+
+  const handleUpdateNotification = (updatedNotif: FeeNotification) => {
+    setNotifications((prev) => prev.map((n) => (n.id === updatedNotif.id ? updatedNotif : n)));
+  };
+
+  const handleDeleteNotification = (notifId: string) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== notifId));
+  };
+
+  const handleBatchDispatch = (urgencyFilter?: NotificationUrgency) => {
+    const today = new Date().toISOString().split('T')[0];
+    setNotifications((prev) =>
+      prev.map((n) => {
+        if (!urgencyFilter || n.urgency === urgencyFilter) {
+          return {
+            ...n,
+            status: 'Delivered',
+            sentDate: today,
+          };
+        }
+        return n;
+      })
+    );
+  };
+
+  // Orphan CRUD Handlers
+  const handleAddOrphan = (newOrphan: OrphanRecord) => {
+    setOrphans((prev) => [newOrphan, ...prev]);
+  };
+
+  const handleUpdateOrphan = (updatedOrphan: OrphanRecord) => {
+    setOrphans((prev) => prev.map((o) => (o.id === updatedOrphan.id ? updatedOrphan : o)));
+  };
+
+  // Science Lab Handlers
   const handleAddEquipment = (item: LabEquipment) => {
     setLabEquipment((prev) => [item, ...prev]);
   };
@@ -70,10 +121,33 @@ export default function App() {
     setLabSessions((prev) => [session, ...prev]);
   };
 
+  // JCC FC Player CRUD Handlers
   const handleAddPlayer = (player: Player) => {
     setPlayers((prev) => [player, ...prev]);
   };
 
+  const handleUpdatePlayer = (updatedPlayer: Player) => {
+    setPlayers((prev) => prev.map((p) => (p.id === updatedPlayer.id ? updatedPlayer : p)));
+  };
+
+  const handleDeletePlayer = (playerId: string) => {
+    setPlayers((prev) => prev.filter((p) => p.id !== playerId));
+  };
+
+  // JCC FC Match CRUD Handlers
+  const handleAddMatch = (match: Match) => {
+    setMatches((prev) => [match, ...prev]);
+  };
+
+  const handleUpdateMatch = (updatedMatch: Match) => {
+    setMatches((prev) => prev.map((m) => (m.id === updatedMatch.id ? updatedMatch : m)));
+  };
+
+  const handleDeleteMatch = (matchId: string) => {
+    setMatches((prev) => prev.filter((m) => m.id !== matchId));
+  };
+
+  // Event & Sponsorship Handlers
   const handleAddEvent = (evt: CommunityEvent) => {
     setEvents((prev) => [evt, ...prev]);
   };
@@ -107,6 +181,7 @@ export default function App() {
           onLogout={() => setIsAuthenticated(false)}
           students={students}
           players={players}
+          orphans={orphans}
         />
 
         {/* Main Workspace Body */}
@@ -126,9 +201,29 @@ export default function App() {
           {activeTab === 'school' && (
             <SchoolManagement
               students={students}
+              notifications={notifications}
               onAddStudent={handleAddStudent}
               onUpdateStudent={handleUpdateStudent}
+              onDeleteStudent={handleDeleteStudent}
+              onAddNotification={handleAddNotification}
+              onUpdateNotification={handleUpdateNotification}
+              onDeleteNotification={handleDeleteNotification}
+              onBatchDispatch={handleBatchDispatch}
               searchQuery={searchQuery}
+            />
+          )}
+
+          {activeTab === 'orphanage' && (
+            <OrphanageManagement
+              orphans={orphans}
+              onAddOrphan={handleAddOrphan}
+              onUpdateOrphan={handleUpdateOrphan}
+              currentUser={currentUser}
+              searchQuery={searchQuery}
+              onNavigateToSchool={(studentId) => {
+                setActiveTab('school');
+                setSearchQuery(studentId);
+              }}
             />
           )}
 
@@ -148,6 +243,11 @@ export default function App() {
               matches={matches}
               trophies={TROPHIES}
               onAddPlayer={handleAddPlayer}
+              onUpdatePlayer={handleUpdatePlayer}
+              onDeletePlayer={handleDeletePlayer}
+              onAddMatch={handleAddMatch}
+              onUpdateMatch={handleUpdateMatch}
+              onDeleteMatch={handleDeleteMatch}
               searchQuery={searchQuery}
             />
           )}
@@ -198,9 +298,10 @@ export default function App() {
           </div>
           <div className="flex items-center gap-6">
             <button onClick={() => setActiveTab('school')} className="hover:text-emerald-400">Academic School</button>
+            <button onClick={() => setActiveTab('orphanage')} className="hover:text-rose-400 font-semibold">Orphanage & Welfare</button>
             <button onClick={() => setActiveTab('science-lab')} className="hover:text-cyan-400">Science Lab</button>
-            <button onClick={() => setActiveTab('jcc-fc')} className="hover:text-amber-400">JCC FC Football</button>
-            <button onClick={() => setActiveTab('community')} className="hover:text-purple-400">Instagram & Events</button>
+            <button onClick={() => setActiveTab('jcc-fc')} className="hover:text-amber-400">JCC FC</button>
+            <button onClick={() => setActiveTab('sponsorship')} className="hover:text-emerald-400">Support JCC</button>
           </div>
         </div>
       </footer>

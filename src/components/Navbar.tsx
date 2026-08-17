@@ -5,6 +5,7 @@ import {
   Microscope,
   Users,
   HeartHandshake,
+  Heart,
   Bot,
   LayoutDashboard,
   MapPin,
@@ -20,9 +21,9 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 
-import { ModuleTab, UserSession, Student, Player } from '../types';
+import { ModuleTab, UserSession, Student, Player, OrphanRecord } from '../types';
 import { ASSET_IMAGES, DEFAULT_USERS } from '../data/mockData';
-import { exportStudentsPdf, exportPlayersPdf, exportExecutiveCombinedPdf } from '../utils/pdfExporter';
+import { exportStudentsPdf, exportPlayersPdf, exportExecutiveCombinedPdf, exportOrphanRosterPdf } from '../utils/pdfExporter';
 
 interface NavbarProps {
   activeTab: ModuleTab;
@@ -34,6 +35,7 @@ interface NavbarProps {
   onLogout: () => void;
   students: Student[];
   players: Player[];
+  orphans?: OrphanRecord[];
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -46,6 +48,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onLogout,
   students,
   players,
+  orphans = [],
 }) => {
   const [showNotifications, setShowNotifications] = React.useState(false);
   const [showAuthModal, setShowAuthModal] = React.useState(false);
@@ -53,7 +56,8 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const navItems = [
     { id: 'overview' as ModuleTab, label: 'Overview', icon: LayoutDashboard },
-    { id: 'school' as ModuleTab, label: 'JCC School & Welfare', icon: GraduationCap },
+    { id: 'school' as ModuleTab, label: 'JCC School & Fees', icon: GraduationCap },
+    { id: 'orphanage' as ModuleTab, label: 'Orphanage & Welfare', icon: Heart },
     { id: 'science-lab' as ModuleTab, label: 'Science & Math Lab', icon: Microscope },
     { id: 'jcc-fc' as ModuleTab, label: 'JCC FC Football', icon: Trophy },
     { id: 'community' as ModuleTab, label: 'Community & Social', icon: Users },
@@ -163,6 +167,16 @@ export const Navbar: React.FC<NavbarProps> = ({
                   >
                     <GraduationCap className="w-4 h-4 text-emerald-400" />
                     <span>Download Student Roster (PDF)</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      exportOrphanRosterPdf(orphans);
+                      setShowPdfDropdown(false);
+                    }}
+                    className="w-full px-3 py-2 text-left text-slate-200 hover:bg-rose-600/20 hover:text-rose-300 flex items-center gap-2 transition-colors"
+                  >
+                    <Heart className="w-4 h-4 text-rose-400" />
+                    <span>Download Orphan Welfare Roster (PDF)</span>
                   </button>
                   <button
                     onClick={() => {

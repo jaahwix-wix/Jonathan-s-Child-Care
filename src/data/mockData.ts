@@ -27,7 +27,7 @@ export const ASSET_IMAGES = {
 export const DEFAULT_USERS: UserSession[] = [
   {
     id: 'USR-01',
-    name: 'Dr. Jonathan Kpakima',
+    name: 'Dr. Jonathan Davies',
     role: 'Director / Administrator',
     email: 'director@jonathanschildcare.org',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
@@ -208,7 +208,7 @@ export const INITIAL_STUDENTS: Student[] = [
         installmentTitle: 'Full Term Fee (Sponsor Grant)',
         paymentMethod: 'Scholarship / Sponsor',
         receiptNumber: 'REC-NUR-2026-015',
-        recordedBy: 'Dr. Jonathan Kpakima',
+        recordedBy: 'Dr. Jonathan Davies',
         notes: 'Annual sponsor tuition allocation',
       },
     ],
@@ -386,7 +386,7 @@ export const INITIAL_STUDENTS: Student[] = [
         installmentTitle: 'Full Secondary STEM Tuition & Lab Access',
         paymentMethod: 'Scholarship / Sponsor',
         receiptNumber: 'REC-SEC-2026-001',
-        recordedBy: 'Dr. Jonathan Kpakima',
+        recordedBy: 'Dr. Jonathan Davies',
         notes: 'Full annual sponsorship disbursed',
       },
     ],
@@ -1402,7 +1402,7 @@ export const INITIAL_ORPHANS: OrphanRecord[] = [
       lastCareReviewDate: '2026-08-08',
     },
     guardian: {
-      guardianName: 'Dr. Jonathan Kpakima (Legal Guardian)',
+      guardianName: 'Dr. Jonathan Davies (Legal Guardian)',
       relation: 'Appointed Legal Guardian',
       contactNumber: '+232 76 555 123',
       communityLocation: 'JCC Residential Compound, Bo City',
@@ -1616,7 +1616,7 @@ export const INITIAL_ORPHANS: OrphanRecord[] = [
       lastCareReviewDate: '2026-08-01',
     },
     guardian: {
-      guardianName: 'Dr. Jonathan Kpakima (Director & Legal Guardian)',
+      guardianName: 'Dr. Jonathan Davies (Director & Legal Guardian)',
       relation: 'Appointed Legal Guardian',
       contactNumber: '+232 76 555 123',
       communityLocation: 'JCC Bo Central Campus',

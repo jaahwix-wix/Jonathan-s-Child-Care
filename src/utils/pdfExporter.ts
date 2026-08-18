@@ -107,7 +107,7 @@ export const exportStudentsPdf = (students: Student[]) => {
     doc.text("Mrs. Fatmata Sesay (Head Teacher / Bursar)", 14, finalY + 33);
 
     doc.line(110, finalY + 28, 180, finalY + 28);
-    doc.text("Dr. Jonathan Kpakima (Director)", 110, finalY + 33);
+    doc.text("Dr. Jonathan Davies (Director)", 110, finalY + 33);
   }
 
   doc.save(`JCC_Student_Fees_Roster_${dateStr.replace(/ /g, '_')}.pdf`);
@@ -378,7 +378,7 @@ export const exportPlayersPdf = (players: Player[]) => {
     doc.text("Coach Mohamed Turay (Head Coach)", 14, finalY + 33);
 
     doc.line(110, finalY + 28, 180, finalY + 28);
-    doc.text("Dr. Jonathan Kpakima (Technical Director)", 110, finalY + 33);
+    doc.text("Dr. Jonathan Davies (Technical Director)", 110, finalY + 33);
   }
 
   doc.save(`JCC_FC_Player_Roster_${dateStr.replace(/ /g, '_')}.pdf`);
@@ -582,7 +582,7 @@ export const exportOrphanRosterPdf = (orphans: OrphanRecord[]) => {
     doc.setFontSize(8.5);
     doc.setTextColor(100, 116, 139);
     doc.text("Approved by: Mrs. Aminata Conteh (Welfare Director & Child Protection Officer)", 14, finalY + 14);
-    doc.text("Counter-signed: Dr. Jonathan Kpakima (Director, JCC Ministries)", 14, finalY + 20);
+    doc.text("Counter-signed: Dr. Jonathan Davies (Director, JCC Ministries)", 14, finalY + 20);
     doc.text("Official Seal: Jonathan's Child Care Bo Residential Home & Ministry Safeguarding Desk", 14, finalY + 26);
   }
 
@@ -758,7 +758,7 @@ export const exportOrphanWelfarePdf = (orphan: OrphanRecord) => {
     doc.setFontSize(8.5);
     doc.setTextColor(100, 116, 139);
     doc.text("Prepared by: Mrs. Aminata Conteh (Child Welfare Officer)", 14, finalY + 12);
-    doc.text("Director Sign-off: Dr. Jonathan Kpakima (Director, JCC Bo)", 14, finalY + 18);
+    doc.text("Director Sign-off: Dr. Jonathan Davies (Director, JCC Bo)", 14, finalY + 18);
   }
 
   doc.save(`JCC_Welfare_Dossier_${orphan.fullName.replace(/ /g, '_')}_${orphan.id}.pdf`);

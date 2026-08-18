@@ -4,16 +4,16 @@ import {
   Trophy,
   Microscope,
   Users,
+  MapPin,
+  Calendar,
   Award,
   ArrowRight,
   Sparkles,
-  HeartHandshake,
-  Calendar,
-  CheckCircle2,
-  TrendingUp,
-  MapPin,
-  ExternalLink,
   Flame,
+  CheckCircle2,
+  HeartHandshake,
+  Heart,
+  PlusCircle,
 } from 'lucide-react';
 import { ModuleTab, Student, Player, Match, Trophy as TrophyType, CommunityEvent, InstagramPost } from '../types';
 import { ASSET_IMAGES } from '../data/mockData';
@@ -38,9 +38,12 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
   events,
   instagramPosts,
 }) => {
-  const topScorer = players.reduce((prev, current) => (prev.goals > current.goals ? prev : current), players[0]);
-  const upcomingMatch = matches.find((m) => m.status === 'Upcoming') || matches[0];
-  const nextEvent = events.find((e) => e.status === 'Upcoming') || events[0];
+  const topScorer = players.length > 0
+    ? players.reduce((prev, current) => (prev.goals > current.goals ? prev : current), players[0])
+    : null;
+
+  const upcomingMatch = matches.find((m) => m.status === 'Upcoming') || matches[0] || null;
+  const nextEvent = events.find((e) => e.status === 'Upcoming') || events[0] || null;
 
   return (
     <div className="space-y-8 pb-12">
@@ -115,15 +118,17 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
         >
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Enrolled Students</p>
-              <h3 className="text-2xl font-bold text-white mt-1 group-hover:text-emerald-400 transition-colors">420+ Children</h3>
+              <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Enrolled Pupils</p>
+              <h3 className="text-2xl font-bold text-white mt-1 group-hover:text-emerald-400 transition-colors">
+                {students.length} Registered
+              </h3>
             </div>
             <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
               <GraduationCap className="w-6 h-6" />
             </div>
           </div>
           <div className="mt-4 flex items-center justify-between text-xs text-slate-400 border-t border-slate-800/80 pt-3">
-            <span className="text-emerald-400 font-medium">97.2% Attendance Rate</span>
+            <span className="text-emerald-400 font-medium">Nursery, Primary & JSS</span>
             <span className="flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
               View <ArrowRight className="w-3 h-3" />
             </span>
@@ -138,14 +143,16 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
           <div className="flex justify-between items-start">
             <div>
               <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">STEM Lab Facilities</p>
-              <h3 className="text-2xl font-bold text-white mt-1 group-hover:text-cyan-400 transition-colors">85+ Apparatus</h3>
+              <h3 className="text-2xl font-bold text-white mt-1 group-hover:text-cyan-400 transition-colors">
+                Active Stations
+              </h3>
             </div>
             <div className="p-3 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
               <Microscope className="w-6 h-6" />
             </div>
           </div>
           <div className="mt-4 flex items-center justify-between text-xs text-slate-400 border-t border-slate-800/80 pt-3">
-            <span className="text-cyan-400 font-medium">4 Weekly STEM Sessions</span>
+            <span className="text-cyan-400 font-medium">Equipped for Biology & Physics</span>
             <span className="flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
               Book Lab <ArrowRight className="w-3 h-3" />
             </span>
@@ -159,15 +166,17 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
         >
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">JCC FC Women League</p>
-              <h3 className="text-2xl font-bold text-white mt-1 group-hover:text-amber-400 transition-colors">SRFA Champions</h3>
+              <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">JCC FC Squad</p>
+              <h3 className="text-2xl font-bold text-white mt-1 group-hover:text-amber-400 transition-colors">
+                {players.length} Athletes
+              </h3>
             </div>
             <div className="p-3 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
               <Trophy className="w-6 h-6" />
             </div>
           </div>
           <div className="mt-4 flex items-center justify-between text-xs text-slate-400 border-t border-slate-800/80 pt-3">
-            <span className="text-amber-400 font-medium">Bo District 1st Division Winner</span>
+            <span className="text-amber-400 font-medium">SRFA Regional Champions</span>
             <span className="flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
               Fixtures <ArrowRight className="w-3 h-3" />
             </span>
@@ -182,14 +191,16 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
           <div className="flex justify-between items-start">
             <div>
               <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Community Panels</p>
-              <h3 className="text-2xl font-bold text-white mt-1 group-hover:text-purple-400 transition-colors">8 Active Events</h3>
+              <h3 className="text-2xl font-bold text-white mt-1 group-hover:text-purple-400 transition-colors">
+                {events.length} Events
+              </h3>
             </div>
             <div className="p-3 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
               <Users className="w-6 h-6" />
             </div>
           </div>
           <div className="mt-4 flex items-center justify-between text-xs text-slate-400 border-t border-slate-800/80 pt-3">
-            <span className="text-purple-400 font-medium">180+ Bo Youth Attendees</span>
+            <span className="text-purple-400 font-medium">Bo Youth & Civic Outreach</span>
             <span className="flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
               Events <ArrowRight className="w-3 h-3" />
             </span>
@@ -224,24 +235,34 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Top Student Highlight */}
-            <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700/60 space-y-3">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
-                Top STEM Scholar
-              </span>
-              <div className="flex items-center gap-3">
-                <img
-                  src={students[0].avatar}
-                  alt={students[0].name}
-                  className="w-12 h-12 rounded-full object-cover border-2 border-emerald-500"
-                  referrerPolicy="no-referrer"
-                />
-                <div>
-                  <p className="font-bold text-white text-sm">{students[0].name}</p>
-                  <p className="text-xs text-slate-400">{students[0].gradeLevel}</p>
-                  <p className="text-xs text-emerald-400 font-semibold mt-0.5">Grade Average: 92% (Grade A)</p>
+            {students.length > 0 ? (
+              <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700/60 space-y-3">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
+                  Enrolled Scholar
+                </span>
+                <div className="flex items-center gap-3">
+                  <img
+                    src={students[0].avatar}
+                    alt={students[0].name}
+                    className="w-12 h-12 rounded-full object-cover border-2 border-emerald-500"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div>
+                    <p className="font-bold text-white text-sm">{students[0].name}</p>
+                    <p className="text-xs text-slate-400">{students[0].gradeLevel}</p>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div
+                onClick={() => setActiveTab('school')}
+                className="p-4 rounded-xl bg-slate-800/40 border border-dashed border-slate-700 space-y-2 cursor-pointer hover:border-emerald-500/50 transition-colors text-center"
+              >
+                <PlusCircle className="w-6 h-6 text-emerald-400 mx-auto" />
+                <p className="text-xs font-semibold text-slate-200">No Pupils Registered Yet</p>
+                <p className="text-[11px] text-slate-400">Click to enroll new students in Firestore</p>
+              </div>
+            )}
 
             {/* Science Lab Facility Card */}
             <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700/60 space-y-3">
@@ -251,7 +272,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
               <div>
                 <p className="font-bold text-white text-sm">Dedicated Science & Math Lab</p>
                 <p className="text-xs text-slate-300 mt-1">
-                  Features 12 binocular microscopes, solar energy circuit kits, and 3D geometry tools.
+                  Equipped for binocular microscopy, optics experiments, and chemistry titrations.
                 </p>
               </div>
               <button
@@ -267,7 +288,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
           <div className="p-4 rounded-xl bg-emerald-950/30 border border-emerald-900/50 flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-2 text-xs text-emerald-200">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>100% Student Participation in Science Labs</span>
+              <span>Full Practical STEM Curriculum Active</span>
             </div>
             <button
               onClick={() => setActiveTab('ai-hub')}
@@ -301,39 +322,61 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Top Scorer Card */}
-            <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700/60 space-y-3">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded flex items-center gap-1 w-fit">
-                <Flame className="w-3 h-3 text-amber-400" />
-                Bo District Golden Boot
-              </span>
-              <div className="flex items-center gap-3">
-                <img
-                  src={topScorer.photo}
-                  alt={topScorer.name}
-                  className="w-12 h-12 rounded-full object-cover border-2 border-amber-400"
-                  referrerPolicy="no-referrer"
-                />
-                <div>
-                  <p className="font-bold text-white text-sm">{topScorer.name}</p>
-                  <p className="text-xs text-amber-300 font-semibold">{topScorer.goals} Goals • {topScorer.assists} Assists</p>
-                  <p className="text-[11px] text-slate-400">{topScorer.position} #{topScorer.jerseyNumber}</p>
+            {topScorer ? (
+              <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700/60 space-y-3">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded flex items-center gap-1 w-fit">
+                  <Flame className="w-3 h-3 text-amber-400" />
+                  Squad Striker
+                </span>
+                <div className="flex items-center gap-3">
+                  <img
+                    src={topScorer.photo}
+                    alt={topScorer.name}
+                    className="w-12 h-12 rounded-full object-cover border-2 border-amber-400"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div>
+                    <p className="font-bold text-white text-sm">{topScorer.name}</p>
+                    <p className="text-xs text-amber-300 font-semibold">{topScorer.goals} Goals • {topScorer.assists} Assists</p>
+                    <p className="text-[11px] text-slate-400">{topScorer.position} #{topScorer.jerseyNumber}</p>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div
+                onClick={() => setActiveTab('jcc-fc')}
+                className="p-4 rounded-xl bg-slate-800/40 border border-dashed border-slate-700 space-y-2 cursor-pointer hover:border-amber-500/50 transition-colors text-center"
+              >
+                <PlusCircle className="w-6 h-6 text-amber-400 mx-auto" />
+                <p className="text-xs font-semibold text-slate-200">No Players Added Yet</p>
+                <p className="text-[11px] text-slate-400">Click to register squad members in Firestore</p>
+              </div>
+            )}
 
             {/* Upcoming Match Card */}
-            <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700/60 space-y-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
-                Next Match Fixture
-              </span>
-              <div>
-                <p className="font-bold text-white text-sm">vs {upcomingMatch.opponent}</p>
-                <p className="text-xs text-slate-300 mt-0.5">{upcomingMatch.competition}</p>
-                <p className="text-xs text-emerald-400 font-medium mt-1 flex items-center gap-1">
-                  <Calendar className="w-3 h-3" /> {upcomingMatch.date} • {upcomingMatch.venue}
-                </p>
+            {upcomingMatch ? (
+              <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700/60 space-y-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
+                  Match Fixture
+                </span>
+                <div>
+                  <p className="font-bold text-white text-sm">vs {upcomingMatch.opponent}</p>
+                  <p className="text-xs text-slate-300 mt-0.5">{upcomingMatch.competition}</p>
+                  <p className="text-xs text-emerald-400 font-medium mt-1 flex items-center gap-1">
+                    <Calendar className="w-3 h-3" /> {upcomingMatch.date} • {upcomingMatch.venue}
+                  </p>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div
+                onClick={() => setActiveTab('jcc-fc')}
+                className="p-4 rounded-xl bg-slate-800/40 border border-dashed border-slate-700 space-y-2 cursor-pointer hover:border-amber-500/50 transition-colors text-center"
+              >
+                <Calendar className="w-6 h-6 text-amber-400 mx-auto" />
+                <p className="text-xs font-semibold text-slate-200">No Scheduled Matches</p>
+                <p className="text-[11px] text-slate-400">Click to create match fixtures</p>
+              </div>
+            )}
           </div>
 
           {/* Trophy Cabinet Banner */}
@@ -359,47 +402,46 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
           <div>
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
               <Users className="w-5 h-5 text-purple-400" />
-              Community Panels & Instagram Feed
+              Community Panels & Social Outreach
             </h2>
             <p className="text-xs text-slate-400">
-              Follow updates on the Jonathan's Child Care Instagram Page & Bo District Development Events
+              Bo District Development Events, Youth Empowerment & Community Outreach
             </p>
           </div>
           <button
             onClick={() => setActiveTab('community')}
             className="text-xs text-purple-400 hover:text-purple-300 font-semibold flex items-center gap-1"
           >
-            View All Community Updates <ArrowRight className="w-3.5 h-3.5" />
+            Manage Events <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {instagramPosts.map((post) => (
-            <div
-              key={post.id}
-              className="rounded-xl overflow-hidden bg-slate-800/60 border border-slate-700/60 hover:border-purple-500/50 transition-all flex flex-col justify-between shadow-md"
-            >
-              <div className="relative h-44 overflow-hidden">
-                <img
-                  src={post.imageUrl}
-                  alt="JCC Instagram post"
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                  referrerPolicy="no-referrer"
-                />
-                <span className="absolute top-2 right-2 bg-slate-950/80 backdrop-blur-md text-white text-[10px] px-2 py-0.5 rounded-full border border-slate-700">
-                  {post.postDate}
-                </span>
-              </div>
-              <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                <p className="text-xs text-slate-300 line-clamp-3">{post.caption}</p>
-                <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-700/60">
-                  <span className="text-purple-300 font-medium">❤️ {post.likesCount} Likes</span>
-                  <span className="text-slate-400">💬 {post.commentsCount} Comments</span>
-                </div>
-              </div>
+        {nextEvent ? (
+          <div className="p-4 rounded-xl bg-purple-950/30 border border-purple-900/50 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-purple-300 bg-purple-500/20 px-2 py-0.5 rounded">
+                Upcoming Community Summit
+              </span>
+              <p className="font-bold text-white text-base mt-1">{nextEvent.title}</p>
+              <p className="text-xs text-slate-300">{nextEvent.date} • {nextEvent.location}</p>
             </div>
-          ))}
-        </div>
+            <button
+              onClick={() => setActiveTab('community')}
+              className="text-xs bg-purple-600 hover:bg-purple-500 text-white font-semibold px-4 py-2 rounded-lg transition-colors"
+            >
+              View Event
+            </button>
+          </div>
+        ) : (
+          <div
+            onClick={() => setActiveTab('community')}
+            className="p-4 rounded-xl bg-slate-800/40 border border-dashed border-slate-700 text-center cursor-pointer hover:border-purple-500/50 transition-colors"
+          >
+            <Users className="w-6 h-6 text-purple-400 mx-auto mb-1" />
+            <p className="text-xs font-semibold text-slate-200">No Community Events Listed</p>
+            <p className="text-[11px] text-slate-400">Click to create outreach summits and workshops</p>
+          </div>
+        )}
       </div>
     </div>
   );

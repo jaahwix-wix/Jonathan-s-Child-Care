@@ -33,6 +33,7 @@ import {
   Check,
   Folder,
   FolderOpen,
+  Printer,
 } from 'lucide-react';
 import {
   Student,
@@ -48,6 +49,7 @@ import { exportStudentsPdf, exportFeeReceiptPdf } from '../utils/pdfExporter';
 import { SCHOOL_TIER_CONFIG } from '../data/mockData';
 import { FeeNotificationCenter } from './FeeNotificationCenter';
 import { StudentDirectoryTreeView } from './StudentDirectoryTreeView';
+import { StudentIdCardModal } from './StudentIdCardModal';
 
 interface SchoolManagementProps {
   students: Student[];
@@ -78,6 +80,7 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
   const [subView, setSubView] = useState<'roster' | 'treeview' | 'notifications' | 'matrix'>('roster');
 
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [idCardStudent, setIdCardStudent] = useState<Student | null>(null);
   const [tierFilter, setTierFilter] = useState<'All' | SchoolTier>('All');
   const [feeStatusFilter, setFeeStatusFilter] = useState<string>('All');
   
@@ -700,6 +703,7 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
             setPaymentStudent(student);
             setShowPaymentModal(true);
           }}
+          onPrintIdCard={(student) => setIdCardStudent(student)}
           searchQuery={searchQuery}
         />
       )}
@@ -1111,6 +1115,16 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
                         <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
                       </button>
 
+                      <button
+                        id={`btn-print-id-${student.id}`}
+                        onClick={() => setIdCardStudent(student)}
+                        className="px-2.5 py-2 bg-cyan-600/20 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 rounded-xl text-xs font-bold transition-colors flex items-center gap-1"
+                        title="Print Official Student ID Card"
+                      >
+                        <Printer className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>ID Card</span>
+                      </button>
+
                       {student.remainingBalance > 0 ? (
                         <button
                           onClick={() => handleOpenPaymentModal(student)}
@@ -1120,8 +1134,8 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
                           <span>Pay Fee</span>
                         </button>
                       ) : (
-                        <span className="px-2.5 py-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl text-[11px] font-bold flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Paid in Full
+                        <span className="px-2 py-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl text-[11px] font-bold flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Paid
                         </span>
                       )}
                     </div>
@@ -1191,6 +1205,15 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
               </div>
 
               <div className="flex items-center gap-2">
+                <button
+                  id="btn-print-id-detail-modal"
+                  onClick={() => setIdCardStudent(selectedStudent)}
+                  className="px-3 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-cyan-950/40 cursor-pointer"
+                  title="Print Official Student ID Card"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span className="hidden sm:inline">Print ID Card</span>
+                </button>
                 <button
                   onClick={() => handleOpenEditStudentModal(selectedStudent)}
                   className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 text-xs font-semibold flex items-center gap-1 border border-slate-700"
@@ -1908,6 +1931,16 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
             </form>
           </div>
         </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* PRINTABLE STUDENT ID CARD MODAL */}
+      {/* ======================================================== */}
+      {idCardStudent && (
+        <StudentIdCardModal
+          student={idCardStudent}
+          onClose={() => setIdCardStudent(null)}
+        />
       )}
     </div>
   );

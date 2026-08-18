@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { OverviewDashboard } from './components/OverviewDashboard';
 import { SchoolManagement } from './components/SchoolManagement';
@@ -30,21 +30,17 @@ import {
 } from './types';
 
 import {
-  INITIAL_STUDENTS,
-  INITIAL_ORPHANS,
-  INITIAL_LAB_EQUIPMENT,
-  INITIAL_LAB_SESSIONS,
-  INITIAL_EQUIPMENT_ALLOCATIONS,
-  INITIAL_PLAYERS,
-  INITIAL_MATCHES,
-  TROPHIES,
-  INITIAL_EVENTS,
-  INSTAGRAM_POSTS,
-  INITIAL_SPONSORSHIPS,
   DEFAULT_USERS,
   ASSET_IMAGES,
-  INITIAL_FEE_NOTIFICATIONS,
 } from './data/mockData';
+
+import {
+  COLLECTIONS,
+  subscribeToCollection,
+  saveDocument,
+  removeDocument,
+  saveMultipleDocuments,
+} from './services/firestoreService';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -64,124 +60,181 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<ModuleTab>('overview');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // Application Dynamic State
-  const [students, setStudents] = useState<Student[]>(INITIAL_STUDENTS);
-  const [orphans, setOrphans] = useState<OrphanRecord[]>(INITIAL_ORPHANS);
-  const [labEquipment, setLabEquipment] = useState<LabEquipment[]>(INITIAL_LAB_EQUIPMENT);
-  const [labSessions, setLabSessions] = useState<LabSession[]>(INITIAL_LAB_SESSIONS);
-  const [allocations, setAllocations] = useState<EquipmentAllocation[]>(INITIAL_EQUIPMENT_ALLOCATIONS);
-  const [players, setPlayers] = useState<Player[]>(INITIAL_PLAYERS);
-  const [matches, setMatches] = useState<Match[]>(INITIAL_MATCHES);
-  const [events, setEvents] = useState<CommunityEvent[]>(INITIAL_EVENTS);
-  const [sponsorships, setSponsorships] = useState<Sponsorship[]>(INITIAL_SPONSORSHIPS);
-  const [notifications, setNotifications] = useState<FeeNotification[]>(INITIAL_FEE_NOTIFICATIONS);
+  // Live Firestore-backed Application State
+  const [students, setStudents] = useState<Student[]>([]);
+  const [orphans, setOrphans] = useState<OrphanRecord[]>([]);
+  const [labEquipment, setLabEquipment] = useState<LabEquipment[]>([]);
+  const [labSessions, setLabSessions] = useState<LabSession[]>([]);
+  const [allocations, setAllocations] = useState<EquipmentAllocation[]>([]);
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [events, setEvents] = useState<CommunityEvent[]>([]);
+  const [instagramPosts, setInstagramPosts] = useState<InstagramPost[]>([]);
+  const [sponsorships, setSponsorships] = useState<Sponsorship[]>([]);
+  const [notifications, setNotifications] = useState<FeeNotification[]>([]);
+  const [trophies, setTrophies] = useState<Trophy[]>([]);
 
-  // Student CRUD Handlers
-  const handleAddStudent = (newStudent: Student) => {
-    setStudents((prev) => [newStudent, ...prev]);
+  // Firestore Real-Time Subscriptions
+  useEffect(() => {
+    const unsubStudents = subscribeToCollection<Student>(COLLECTIONS.STUDENTS, setStudents);
+    const unsubOrphans = subscribeToCollection<OrphanRecord>(COLLECTIONS.ORPHANS, setOrphans);
+    const unsubEquipment = subscribeToCollection<LabEquipment>(COLLECTIONS.LAB_EQUIPMENT, setLabEquipment);
+    const unsubSessions = subscribeToCollection<LabSession>(COLLECTIONS.LAB_SESSIONS, setLabSessions);
+    const unsubAllocations = subscribeToCollection<EquipmentAllocation>(COLLECTIONS.EQUIPMENT_ALLOCATIONS, setAllocations);
+    const unsubPlayers = subscribeToCollection<Player>(COLLECTIONS.PLAYERS, setPlayers);
+    const unsubMatches = subscribeToCollection<Match>(COLLECTIONS.MATCHES, setMatches);
+    const unsubEvents = subscribeToCollection<CommunityEvent>(COLLECTIONS.EVENTS, setEvents);
+    const unsubPosts = subscribeToCollection<InstagramPost>(COLLECTIONS.INSTAGRAM_POSTS, setInstagramPosts);
+    const unsubSponsorships = subscribeToCollection<Sponsorship>(COLLECTIONS.SPONSORSHIPS, setSponsorships);
+    const unsubNotifications = subscribeToCollection<FeeNotification>(COLLECTIONS.FEE_NOTIFICATIONS, setNotifications);
+    const unsubTrophies = subscribeToCollection<Trophy>(COLLECTIONS.TROPHIES, setTrophies);
+
+    return () => {
+      unsubStudents();
+      unsubOrphans();
+      unsubEquipment();
+      unsubSessions();
+      unsubAllocations();
+      unsubPlayers();
+      unsubMatches();
+      unsubEvents();
+      unsubPosts();
+      unsubSponsorships();
+      unsubNotifications();
+      unsubTrophies();
+    };
+  }, []);
+
+  // Student Firestore Handlers
+  const handleAddStudent = async (newStudent: Student) => {
+    setStudents((prev) => [newStudent, ...prev.filter((s) => s.id !== newStudent.id)]);
+    await saveDocument(COLLECTIONS.STUDENTS, newStudent);
   };
 
-  const handleUpdateStudent = (updatedStudent: Student) => {
+  const handleUpdateStudent = async (updatedStudent: Student) => {
     setStudents((prev) => prev.map((s) => (s.id === updatedStudent.id ? updatedStudent : s)));
+    await saveDocument(COLLECTIONS.STUDENTS, updatedStudent);
   };
 
-  const handleDeleteStudent = (studentId: string) => {
+  const handleDeleteStudent = async (studentId: string) => {
     setStudents((prev) => prev.filter((s) => s.id !== studentId));
+    await removeDocument(COLLECTIONS.STUDENTS, studentId);
   };
 
-  // Fee Notification CRUD Handlers
-  const handleAddNotification = (notif: FeeNotification) => {
-    setNotifications((prev) => [notif, ...prev]);
+  // Fee Notification Firestore Handlers
+  const handleAddNotification = async (notif: FeeNotification) => {
+    setNotifications((prev) => [notif, ...prev.filter((n) => n.id !== notif.id)]);
+    await saveDocument(COLLECTIONS.FEE_NOTIFICATIONS, notif);
   };
 
-  const handleUpdateNotification = (updatedNotif: FeeNotification) => {
+  const handleUpdateNotification = async (updatedNotif: FeeNotification) => {
     setNotifications((prev) => prev.map((n) => (n.id === updatedNotif.id ? updatedNotif : n)));
+    await saveDocument(COLLECTIONS.FEE_NOTIFICATIONS, updatedNotif);
   };
 
-  const handleDeleteNotification = (notifId: string) => {
+  const handleDeleteNotification = async (notifId: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== notifId));
+    await removeDocument(COLLECTIONS.FEE_NOTIFICATIONS, notifId);
   };
 
-  const handleBatchDispatch = (urgencyFilter?: NotificationUrgency) => {
+  const handleBatchDispatch = async (urgencyFilter?: NotificationUrgency) => {
     const today = new Date().toISOString().split('T')[0];
-    setNotifications((prev) =>
-      prev.map((n) => {
-        if (!urgencyFilter || n.urgency === urgencyFilter) {
-          return {
-            ...n,
-            status: 'Delivered',
-            sentDate: today,
-          };
-        }
-        return n;
-      })
-    );
+    const updated = notifications.map((n) => {
+      if (!urgencyFilter || n.urgency === urgencyFilter) {
+        return {
+          ...n,
+          status: 'Delivered' as const,
+          sentDate: today,
+        };
+      }
+      return n;
+    });
+    setNotifications(updated);
+    const affected = updated.filter((n) => !urgencyFilter || n.urgency === urgencyFilter);
+    if (affected.length > 0) {
+      await saveMultipleDocuments(COLLECTIONS.FEE_NOTIFICATIONS, affected);
+    }
   };
 
-  // Orphan CRUD Handlers
-  const handleAddOrphan = (newOrphan: OrphanRecord) => {
-    setOrphans((prev) => [newOrphan, ...prev]);
+  // Orphan Firestore Handlers
+  const handleAddOrphan = async (newOrphan: OrphanRecord) => {
+    setOrphans((prev) => [newOrphan, ...prev.filter((o) => o.id !== newOrphan.id)]);
+    await saveDocument(COLLECTIONS.ORPHANS, newOrphan);
   };
 
-  const handleUpdateOrphan = (updatedOrphan: OrphanRecord) => {
+  const handleUpdateOrphan = async (updatedOrphan: OrphanRecord) => {
     setOrphans((prev) => prev.map((o) => (o.id === updatedOrphan.id ? updatedOrphan : o)));
+    await saveDocument(COLLECTIONS.ORPHANS, updatedOrphan);
   };
 
   // Science Lab Apparatus & Session Handlers
-  const handleAddEquipment = (item: LabEquipment) => {
-    setLabEquipment((prev) => [item, ...prev]);
+  const handleAddEquipment = async (item: LabEquipment) => {
+    setLabEquipment((prev) => [item, ...prev.filter((e) => e.id !== item.id)]);
+    await saveDocument(COLLECTIONS.LAB_EQUIPMENT, item);
   };
 
-  const handleAddLabSession = (session: LabSession) => {
-    setLabSessions((prev) => [session, ...prev]);
+  const handleAddLabSession = async (session: LabSession) => {
+    setLabSessions((prev) => [session, ...prev.filter((s) => s.id !== session.id)]);
+    await saveDocument(COLLECTIONS.LAB_SESSIONS, session);
   };
 
-  // Science Lab Resource Allocation Handlers (Anti-Double-Booking)
-  const handleAddAllocation = (newAlloc: EquipmentAllocation) => {
-    setAllocations((prev) => [newAlloc, ...prev]);
+  // Science Lab Resource Allocation Handlers
+  const handleAddAllocation = async (newAlloc: EquipmentAllocation) => {
+    setAllocations((prev) => [newAlloc, ...prev.filter((a) => a.id !== newAlloc.id)]);
+    await saveDocument(COLLECTIONS.EQUIPMENT_ALLOCATIONS, newAlloc);
   };
 
-  const handleUpdateAllocation = (updatedAlloc: EquipmentAllocation) => {
+  const handleUpdateAllocation = async (updatedAlloc: EquipmentAllocation) => {
     setAllocations((prev) => prev.map((a) => (a.id === updatedAlloc.id ? updatedAlloc : a)));
+    await saveDocument(COLLECTIONS.EQUIPMENT_ALLOCATIONS, updatedAlloc);
   };
 
-  const handleDeleteAllocation = (allocId: string) => {
+  const handleDeleteAllocation = async (allocId: string) => {
     setAllocations((prev) => prev.filter((a) => a.id !== allocId));
+    await removeDocument(COLLECTIONS.EQUIPMENT_ALLOCATIONS, allocId);
   };
 
-  // JCC FC Player CRUD Handlers
-  const handleAddPlayer = (player: Player) => {
-    setPlayers((prev) => [player, ...prev]);
+  // JCC FC Player Handlers
+  const handleAddPlayer = async (player: Player) => {
+    setPlayers((prev) => [player, ...prev.filter((p) => p.id !== player.id)]);
+    await saveDocument(COLLECTIONS.PLAYERS, player);
   };
 
-  const handleUpdatePlayer = (updatedPlayer: Player) => {
+  const handleUpdatePlayer = async (updatedPlayer: Player) => {
     setPlayers((prev) => prev.map((p) => (p.id === updatedPlayer.id ? updatedPlayer : p)));
+    await saveDocument(COLLECTIONS.PLAYERS, updatedPlayer);
   };
 
-  const handleDeletePlayer = (playerId: string) => {
+  const handleDeletePlayer = async (playerId: string) => {
     setPlayers((prev) => prev.filter((p) => p.id !== playerId));
+    await removeDocument(COLLECTIONS.PLAYERS, playerId);
   };
 
-  // JCC FC Match CRUD Handlers
-  const handleAddMatch = (match: Match) => {
-    setMatches((prev) => [match, ...prev]);
+  // JCC FC Match Handlers
+  const handleAddMatch = async (match: Match) => {
+    setMatches((prev) => [match, ...prev.filter((m) => m.id !== match.id)]);
+    await saveDocument(COLLECTIONS.MATCHES, match);
   };
 
-  const handleUpdateMatch = (updatedMatch: Match) => {
+  const handleUpdateMatch = async (updatedMatch: Match) => {
     setMatches((prev) => prev.map((m) => (m.id === updatedMatch.id ? updatedMatch : m)));
+    await saveDocument(COLLECTIONS.MATCHES, updatedMatch);
   };
 
-  const handleDeleteMatch = (matchId: string) => {
+  const handleDeleteMatch = async (matchId: string) => {
     setMatches((prev) => prev.filter((m) => m.id !== matchId));
+    await removeDocument(COLLECTIONS.MATCHES, matchId);
   };
 
   // Event & Sponsorship Handlers
-  const handleAddEvent = (evt: CommunityEvent) => {
-    setEvents((prev) => [evt, ...prev]);
+  const handleAddEvent = async (evt: CommunityEvent) => {
+    setEvents((prev) => [evt, ...prev.filter((e) => e.id !== evt.id)]);
+    await saveDocument(COLLECTIONS.EVENTS, evt);
   };
 
-  const handleAddSponsorship = (spon: Sponsorship) => {
-    setSponsorships((prev) => [spon, ...prev]);
+  const handleAddSponsorship = async (spon: Sponsorship) => {
+    setSponsorships((prev) => [spon, ...prev.filter((s) => s.id !== spon.id)]);
+    await saveDocument(COLLECTIONS.SPONSORSHIPS, spon);
   };
 
   if (!isAuthenticated) {
@@ -231,9 +284,9 @@ export default function App() {
               students={students}
               players={players}
               matches={matches}
-              trophies={TROPHIES}
+              trophies={trophies}
               events={events}
-              instagramPosts={INSTAGRAM_POSTS}
+              instagramPosts={instagramPosts}
             />
           )}
 
@@ -284,7 +337,7 @@ export default function App() {
             <JccFcManagement
               players={players}
               matches={matches}
-              trophies={TROPHIES}
+              trophies={trophies}
               onAddPlayer={handleAddPlayer}
               onUpdatePlayer={handleUpdatePlayer}
               onDeletePlayer={handleDeletePlayer}
@@ -298,7 +351,7 @@ export default function App() {
           {activeTab === 'community' && (
             <CommunityEventsHub
               events={events}
-              instagramPosts={INSTAGRAM_POSTS}
+              instagramPosts={instagramPosts}
               onAddEvent={handleAddEvent}
               searchQuery={searchQuery}
             />

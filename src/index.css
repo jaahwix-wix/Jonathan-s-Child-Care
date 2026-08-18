@@ -31,3 +31,24 @@
   }
 }
 
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #printable-student-id-card, #printable-student-id-card * {
+    visibility: visible;
+  }
+  #printable-student-id-card {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 3.375in !important;
+    max-width: 3.375in !important;
+    box-shadow: none !important;
+    border: 1.5pt solid #059669 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+

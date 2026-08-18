@@ -23,6 +23,7 @@ import {
   Layers,
   ArrowRight,
   Info,
+  Printer,
 } from 'lucide-react';
 import { Student, SchoolTier } from '../types';
 
@@ -30,6 +31,7 @@ interface StudentDirectoryTreeViewProps {
   students: Student[];
   onSelectStudent: (student: Student) => void;
   onOpenPaymentModal: (student: Student) => void;
+  onPrintIdCard?: (student: Student) => void;
   searchQuery: string;
 }
 
@@ -37,6 +39,7 @@ export const StudentDirectoryTreeView: React.FC<StudentDirectoryTreeViewProps> =
   students,
   onSelectStudent,
   onOpenPaymentModal,
+  onPrintIdCard,
   searchQuery,
 }) => {
   // Expanded nodes state: e.g. "root", "tier-Nursery", "grade-Nursery-1", etc.
@@ -367,6 +370,20 @@ export const StudentDirectoryTreeView: React.FC<StudentDirectoryTreeViewProps> =
                                           >
                                             {student.feeStatus}
                                           </span>
+
+                                          {onPrintIdCard && (
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                onPrintIdCard(student);
+                                              }}
+                                              className="px-2 py-1 rounded bg-slate-800 hover:bg-cyan-600 hover:text-white text-slate-300 text-[10px] font-semibold transition-colors flex items-center gap-1 border border-slate-700"
+                                              title="Print Student ID Card"
+                                            >
+                                              <Printer className="w-3 h-3 text-cyan-400" />
+                                              <span className="hidden md:inline">ID Card</span>
+                                            </button>
+                                          )}
 
                                           <button
                                             onClick={(e) => {

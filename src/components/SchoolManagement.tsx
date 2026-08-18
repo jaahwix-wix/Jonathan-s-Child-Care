@@ -31,6 +31,8 @@ import {
   ChevronRight,
   UserCheck,
   Check,
+  Folder,
+  FolderOpen,
 } from 'lucide-react';
 import {
   Student,
@@ -45,6 +47,7 @@ import {
 import { exportStudentsPdf, exportFeeReceiptPdf } from '../utils/pdfExporter';
 import { SCHOOL_TIER_CONFIG } from '../data/mockData';
 import { FeeNotificationCenter } from './FeeNotificationCenter';
+import { StudentDirectoryTreeView } from './StudentDirectoryTreeView';
 
 interface SchoolManagementProps {
   students: Student[];
@@ -72,7 +75,7 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
   searchQuery,
 }) => {
   // Sub-view switcher
-  const [subView, setSubView] = useState<'roster' | 'notifications' | 'matrix'>('roster');
+  const [subView, setSubView] = useState<'roster' | 'treeview' | 'notifications' | 'matrix'>('roster');
 
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [tierFilter, setTierFilter] = useState<'All' | SchoolTier>('All');
@@ -630,6 +633,21 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
       {/* SUB-VIEW NAVIGATION TABS */}
       <div className="flex flex-wrap items-center gap-2 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 shadow-lg">
         <button
+          onClick={() => setSubView('treeview')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            subView === 'treeview'
+              ? 'bg-emerald-600 text-white shadow-md'
+              : 'text-slate-300 hover:bg-slate-800'
+          }`}
+        >
+          <Folder className="w-4 h-4 text-emerald-300" />
+          <span>Pupils Directory (Treeview)</span>
+          <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] bg-slate-950/60 text-white font-mono">
+            {students.length}
+          </span>
+        </button>
+
+        <button
           onClick={() => setSubView('roster')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
             subView === 'roster'
@@ -638,10 +656,7 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
           }`}
         >
           <GraduationCap className="w-4 h-4" />
-          <span>Pupils & Installment Ledger</span>
-          <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] bg-slate-950/60 text-white font-mono">
-            {students.length}
-          </span>
+          <span>Ledger Table View</span>
         </button>
 
         <button
@@ -673,6 +688,21 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
           <span>Nursery, Primary & Secondary Fee Matrix</span>
         </button>
       </div>
+
+      {/* ======================================================== */}
+      {/* TAB 0: PUPILS DIRECTORY TREEVIEW */}
+      {/* ======================================================== */}
+      {subView === 'treeview' && (
+        <StudentDirectoryTreeView
+          students={students}
+          onSelectStudent={(student) => setSelectedStudent(student)}
+          onOpenPaymentModal={(student) => {
+            setPaymentStudent(student);
+            setShowPaymentModal(true);
+          }}
+          searchQuery={searchQuery}
+        />
+      )}
 
       {/* ======================================================== */}
       {/* TAB 1: AUTOMATED FEE NOTIFICATION CENTER */}

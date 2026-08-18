@@ -46,6 +46,7 @@ import {
   WelfareCaseLog,
 } from '../types';
 import { exportOrphanWelfarePdf, exportOrphanRosterPdf } from '../utils/pdfExporter';
+import { OrphanageWelfareTreeView } from './OrphanageWelfareTreeView';
 
 interface OrphanageManagementProps {
   orphans: OrphanRecord[];
@@ -68,7 +69,7 @@ export const OrphanageManagement: React.FC<OrphanageManagementProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedPlacement, setSelectedPlacement] = useState<string>('All');
   const [selectedTier, setSelectedTier] = useState<string>('All');
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const [viewMode, setViewMode] = useState<'treeview' | 'cards' | 'table'>('treeview');
   
   // Privacy & Access Control State
   const [isPrivacyMasked, setIsPrivacyMasked] = useState<boolean>(true);
@@ -693,6 +694,16 @@ export const OrphanageManagement: React.FC<OrphanageManagementProps> = ({
         {/* View mode toggle */}
         <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
           <button
+            onClick={() => setViewMode('treeview')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              viewMode === 'treeview'
+                ? 'bg-rose-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            Hierarchy Treeview
+          </button>
+          <button
             onClick={() => setViewMode('cards')}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
               viewMode === 'cards'
@@ -715,8 +726,14 @@ export const OrphanageManagement: React.FC<OrphanageManagementProps> = ({
         </div>
       </div>
 
-      {/* Orphan Roster Display: Cards vs Table */}
-      {viewMode === 'cards' ? (
+      {/* Orphan Roster Display: Treeview vs Cards vs Table */}
+      {viewMode === 'treeview' ? (
+        <OrphanageWelfareTreeView
+          orphans={filteredOrphans}
+          onSelectOrphan={(orphan) => setSelectedOrphan(orphan)}
+          searchQuery={internalSearch || searchQuery}
+        />
+      ) : viewMode === 'cards' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredOrphans.map((orphan) => {
             const isDouble = orphan.orphanCategory === 'Double Orphan (Both Parents Deceased)';

@@ -27,6 +27,7 @@ import { Player, Match, Trophy as TrophyType } from '../types';
 import { ASSET_IMAGES } from '../data/mockData';
 import { exportPlayersPdf } from '../utils/pdfExporter';
 import { JccFcSeasonAnalytics } from './JccFcSeasonAnalytics';
+import { FootballSquadHierarchyTreeView } from './FootballSquadHierarchyTreeView';
 
 interface JccFcManagementProps {
   players: Player[];
@@ -55,6 +56,7 @@ export const JccFcManagement: React.FC<JccFcManagementProps> = ({
 }) => {
   const [positionFilter, setPositionFilter] = useState<string>('All');
   const [selectedFormation, setSelectedFormation] = useState<'4-3-3' | '4-2-3-1' | '4-4-2'>('4-3-3');
+  const [squadViewMode, setSquadViewMode] = useState<'treeview' | 'cards'>('treeview');
   
   // Modals state
   const [showAddPlayerModal, setShowAddPlayerModal] = useState<boolean>(false);
@@ -585,97 +587,132 @@ export const JccFcManagement: React.FC<JccFcManagementProps> = ({
             ))}
           </div>
 
-          <span className="text-xs text-slate-400 font-medium">
-            Showing <strong className="text-amber-400">{filteredPlayers.length}</strong> Players
-          </span>
-        </div>
-
-        {/* Players Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredPlayers.map((player) => (
-            <div
-              key={player.id}
-              className="bg-slate-900 rounded-2xl border border-slate-800 hover:border-amber-500/50 p-5 transition-all shadow-lg space-y-4 flex flex-col justify-between group"
-            >
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="relative">
-                      <img
-                        src={player.photo}
-                        alt={player.name}
-                        className="w-16 h-16 rounded-2xl object-cover border-2 border-amber-400 shadow-md"
-                        referrerPolicy="no-referrer"
-                      />
-                      <span className="absolute -bottom-2 -right-2 bg-slate-950 text-amber-400 text-xs font-black px-2 py-0.5 rounded-full border border-amber-500">
-                        #{player.jerseyNumber}
-                      </span>
-                    </div>
-
-                    <div>
-                      <h4 className="font-bold text-white text-base group-hover:text-amber-300 transition-colors">
-                        {player.name}
-                      </h4>
-                      <p className="text-xs text-amber-400 font-semibold">{player.position}</p>
-                      <p className="text-[11px] text-slate-400">
-                        Age {player.age} • Rating: <strong className="text-emerald-400">{player.overallRating}</strong>
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Player Admin Controls */}
-                  <div className="flex flex-col gap-1">
-                    <button
-                      onClick={() => handleOpenEditPlayerModal(player)}
-                      className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-amber-400 transition-colors"
-                      title="Edit Player Details"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => setDeletePlayerId(player.id)}
-                      className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 transition-colors"
-                      title="Remove Player"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Player Stats Grid */}
-                <div className="grid grid-cols-4 gap-1.5 text-center text-xs bg-slate-800/60 p-2.5 rounded-xl border border-slate-700/60">
-                  <div>
-                    <span className="text-[9px] text-slate-400 uppercase block">Apps</span>
-                    <span className="font-bold text-white text-xs">{player.appearances}</span>
-                  </div>
-                  <div>
-                    <span className="text-[9px] text-slate-400 uppercase block">Goals</span>
-                    <span className="font-bold text-amber-400 text-xs">{player.goals}</span>
-                  </div>
-                  <div>
-                    <span className="text-[9px] text-slate-400 uppercase block">Assists</span>
-                    <span className="font-bold text-cyan-400 text-xs">{player.assists}</span>
-                  </div>
-                  <div>
-                    <span className="text-[9px] text-slate-400 uppercase block">Minutes</span>
-                    <span className="font-bold text-emerald-400 text-xs">{player.minutesPlayed ?? player.appearances * 85}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
-                <span className="text-emerald-400 font-medium flex items-center gap-1">
-                  <Activity className="w-3.5 h-3.5" /> {player.fitnessStatus}
-                </span>
-                {player.schoolAlumni && (
-                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30 font-semibold">
-                    JCC School Alumni
-                  </span>
-                )}
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+              <button
+                onClick={() => setSquadViewMode('treeview')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  squadViewMode === 'treeview'
+                    ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Squad Treeview
+              </button>
+              <button
+                onClick={() => setSquadViewMode('cards')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  squadViewMode === 'cards'
+                    ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Player Cards
+              </button>
             </div>
-          ))}
+
+            <span className="text-xs text-slate-400 font-medium hidden sm:inline">
+              Showing <strong className="text-amber-400">{filteredPlayers.length}</strong> Players
+            </span>
+          </div>
         </div>
+
+        {/* Squad Display: Treeview vs Cards Grid */}
+        {squadViewMode === 'treeview' ? (
+          <FootballSquadHierarchyTreeView
+            players={filteredPlayers}
+            matches={matches}
+            trophies={trophies}
+            onSelectPlayer={(player) => handleOpenEditPlayerModal(player)}
+            searchQuery={searchQuery}
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredPlayers.map((player) => (
+              <div
+                key={player.id}
+                className="bg-slate-900 rounded-2xl border border-slate-800 hover:border-amber-500/50 p-5 transition-all shadow-lg space-y-4 flex flex-col justify-between group"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="relative">
+                        <img
+                          src={player.photo}
+                          alt={player.name}
+                          className="w-16 h-16 rounded-2xl object-cover border-2 border-amber-400 shadow-md"
+                          referrerPolicy="no-referrer"
+                        />
+                        <span className="absolute -bottom-2 -right-2 bg-slate-950 text-amber-400 text-xs font-black px-2 py-0.5 rounded-full border border-amber-500">
+                          #{player.jerseyNumber}
+                        </span>
+                      </div>
+
+                      <div>
+                        <h4 className="font-bold text-white text-base group-hover:text-amber-300 transition-colors">
+                          {player.name}
+                        </h4>
+                        <p className="text-xs text-amber-400 font-semibold">{player.position}</p>
+                        <p className="text-[11px] text-slate-400">
+                          Age {player.age} • Rating: <strong className="text-emerald-400">{player.overallRating}</strong>
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Player Admin Controls */}
+                    <div className="flex flex-col gap-1">
+                      <button
+                        onClick={() => handleOpenEditPlayerModal(player)}
+                        className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-amber-400 transition-colors"
+                        title="Edit Player Details"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setDeletePlayerId(player.id)}
+                        className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 transition-colors"
+                        title="Remove Player"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Player Stats Grid */}
+                  <div className="grid grid-cols-4 gap-1.5 text-center text-xs bg-slate-800/60 p-2.5 rounded-xl border border-slate-700/60">
+                    <div>
+                      <span className="text-[9px] text-slate-400 uppercase block">Apps</span>
+                      <span className="font-bold text-white text-xs">{player.appearances}</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-400 uppercase block">Goals</span>
+                      <span className="font-bold text-amber-400 text-xs">{player.goals}</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-400 uppercase block">Assists</span>
+                      <span className="font-bold text-cyan-400 text-xs">{player.assists}</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-400 uppercase block">Minutes</span>
+                      <span className="font-bold text-emerald-400 text-xs">{player.minutesPlayed ?? player.appearances * 85}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+                  <span className="text-emerald-400 font-medium flex items-center gap-1">
+                    <Activity className="w-3.5 h-3.5" /> {player.fitnessStatus}
+                  </span>
+                  {player.schoolAlumni && (
+                    <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30 font-semibold">
+                      JCC School Alumni
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Interactive Match Formation Pitch & Tactics Board */}

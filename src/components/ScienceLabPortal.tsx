@@ -26,6 +26,7 @@ import { LabEquipment, LabSession, EquipmentAllocation } from '../types';
 import { ASSET_IMAGES, LAB_TEACHERS_LIST } from '../data/mockData';
 import { EquipmentAllocationManager } from './EquipmentAllocationManager';
 import { EquipmentUtilizationChart } from './EquipmentUtilizationChart';
+import { LabHierarchyTreeView } from './LabHierarchyTreeView';
 import { exportLabAllocationsPdf } from '../utils/pdfExporter';
 
 interface ScienceLabPortalProps {
@@ -51,7 +52,7 @@ export const ScienceLabPortal: React.FC<ScienceLabPortalProps> = ({
   onDeleteAllocation,
   searchQuery,
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'analytics' | 'allocations' | 'inventory' | 'sessions' | 'stem-ai'>('analytics');
+  const [activeSubTab, setActiveSubTab] = useState<'analytics' | 'treeview' | 'allocations' | 'inventory' | 'sessions' | 'stem-ai'>('analytics');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [showAddEquipmentModal, setShowAddEquipmentModal] = useState<boolean>(false);
   const [showScheduleModal, setShowScheduleModal] = useState<boolean>(false);
@@ -202,6 +203,21 @@ export const ScienceLabPortal: React.FC<ScienceLabPortalProps> = ({
       {/* Sub-Navigation Tabs */}
       <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-3">
         <button
+          onClick={() => setActiveSubTab('treeview')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            activeSubTab === 'treeview'
+              ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-900/40'
+              : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800'
+          }`}
+        >
+          <Layers className="w-4 h-4 text-cyan-300" />
+          <span>Lab & Inventory (Treeview)</span>
+          <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-cyan-950 text-cyan-200 border border-cyan-800">
+            {equipment.length}
+          </span>
+        </button>
+
+        <button
           onClick={() => setActiveSubTab('analytics')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
             activeSubTab === 'analytics'
@@ -240,10 +256,7 @@ export const ScienceLabPortal: React.FC<ScienceLabPortalProps> = ({
           }`}
         >
           <Microscope className="w-4 h-4 text-cyan-400" />
-          <span>Apparatus Inventory & Stations</span>
-          <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300">
-            {equipment.length}
-          </span>
+          <span>Apparatus Inventory Table</span>
         </button>
 
         <button
@@ -256,9 +269,6 @@ export const ScienceLabPortal: React.FC<ScienceLabPortalProps> = ({
         >
           <Calendar className="w-4 h-4 text-cyan-400" />
           <span>Scheduled Practical Classes</span>
-          <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300">
-            {labSessions.length}
-          </span>
         </button>
 
         <button
@@ -270,9 +280,19 @@ export const ScienceLabPortal: React.FC<ScienceLabPortalProps> = ({
           }`}
         >
           <Sparkles className="w-4 h-4 text-amber-300" />
-          <span>AI STEM Experiment Protocol Generator</span>
+          <span>AI STEM Protocol Generator</span>
         </button>
       </div>
+
+      {/* SUB-TAB -1: LAB HIERARCHY TREEVIEW */}
+      {activeSubTab === 'treeview' && (
+        <LabHierarchyTreeView
+          equipment={equipment}
+          allocations={allocations}
+          labSessions={labSessions}
+          searchQuery={searchQuery}
+        />
+      )}
 
       {/* SUB-TAB 0: APPARATUS UTILIZATION & DEMAND FREQUENCY CHART */}
       {activeSubTab === 'analytics' && (

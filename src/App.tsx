@@ -195,12 +195,12 @@ export default function App() {
     );
   }
 
-  // Determine root theme class names
+  // Determine root theme class names & layout styling with refined archetypes
   const themeClasses =
     themeMode === 'academic-light'
       ? 'min-h-screen bg-slate-900 text-slate-100 font-sans selection:bg-emerald-500 selection:text-white flex flex-col justify-between'
       : themeMode === 'deep-navy'
-      ? 'min-h-screen bg-[#070c1b] text-slate-100 font-sans selection:bg-indigo-500 selection:text-white flex flex-col justify-between'
+      ? 'min-h-screen bg-[#050b18] text-slate-100 font-sans selection:bg-indigo-500 selection:text-white flex flex-col justify-between'
       : 'min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-emerald-500 selection:text-slate-950 flex flex-col justify-between';
 
   return (

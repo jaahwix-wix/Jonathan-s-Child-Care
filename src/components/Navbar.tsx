@@ -19,11 +19,14 @@ import {
   FileText,
   ChevronDown,
   CheckCircle2,
+  Palette,
+  Sun,
+  Moon,
 } from 'lucide-react';
 
-import { ModuleTab, UserSession, Student, Player, OrphanRecord } from '../types';
+import { ModuleTab, UserSession, Student, Player, OrphanRecord, EquipmentAllocation, ThemeMode } from '../types';
 import { ASSET_IMAGES, DEFAULT_USERS } from '../data/mockData';
-import { exportStudentsPdf, exportPlayersPdf, exportExecutiveCombinedPdf, exportOrphanRosterPdf } from '../utils/pdfExporter';
+import { exportStudentsPdf, exportPlayersPdf, exportExecutiveCombinedPdf, exportOrphanRosterPdf, exportLabAllocationsPdf } from '../utils/pdfExporter';
 
 interface NavbarProps {
   activeTab: ModuleTab;
@@ -36,6 +39,9 @@ interface NavbarProps {
   students: Student[];
   players: Player[];
   orphans?: OrphanRecord[];
+  allocations?: EquipmentAllocation[];
+  themeMode: ThemeMode;
+  onThemeChange: (theme: ThemeMode) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -49,10 +55,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   students,
   players,
   orphans = [],
+  allocations = [],
+  themeMode,
+  onThemeChange,
 }) => {
   const [showNotifications, setShowNotifications] = React.useState(false);
   const [showAuthModal, setShowAuthModal] = React.useState(false);
   const [showPdfDropdown, setShowPdfDropdown] = React.useState(false);
+  const [showThemeDropdown, setShowThemeDropdown] = React.useState(false);
 
   const navItems = [
     { id: 'overview' as ModuleTab, label: 'Overview', icon: LayoutDashboard },
@@ -188,6 +198,16 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <Trophy className="w-4 h-4 text-amber-400" />
                     <span>Download Player Roster (PDF)</span>
                   </button>
+                  <button
+                    onClick={() => {
+                      exportLabAllocationsPdf(allocations);
+                      setShowPdfDropdown(false);
+                    }}
+                    className="w-full px-3 py-2 text-left text-slate-200 hover:bg-cyan-600/20 hover:text-cyan-300 flex items-center gap-2 transition-colors"
+                  >
+                    <Microscope className="w-4 h-4 text-cyan-400" />
+                    <span>Download Science Lab Schedule (PDF)</span>
+                  </button>
                   <div className="my-1 border-t border-slate-800" />
                   <button
                     onClick={() => {
@@ -198,6 +218,81 @@ export const Navbar: React.FC<NavbarProps> = ({
                   >
                     <FileText className="w-4 h-4 text-cyan-400" />
                     <span>Master Executive Audit (PDF)</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Theme Selector Dropdown Button */}
+            <div className="relative">
+              <button
+                id="btn-theme-switcher"
+                onClick={() => setShowThemeDropdown(!showThemeDropdown)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs shadow-sm transition-all border border-slate-700"
+                title="Change Application Theme"
+              >
+                <Palette className="w-4 h-4 text-amber-400" />
+                <span className="hidden md:inline">
+                  {themeMode === 'academic-light' ? 'Academic Light' : themeMode === 'midnight-emerald' ? 'Midnight Emerald' : 'Deep Navy'}
+                </span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              </button>
+
+              {showThemeDropdown && (
+                <div className="absolute right-0 mt-2 w-56 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl py-2 z-50 text-xs space-y-1">
+                  <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Select Theme Archetype
+                  </div>
+                  <button
+                    onClick={() => {
+                      onThemeChange('academic-light');
+                      setShowThemeDropdown(false);
+                    }}
+                    className={`w-full px-3 py-2 text-left flex items-center justify-between transition-colors ${
+                      themeMode === 'academic-light'
+                        ? 'bg-emerald-600/30 text-emerald-300 font-bold'
+                        : 'text-slate-300 hover:bg-slate-800'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <Sun className="w-4 h-4 text-amber-400" />
+                      Academic Light (Ivory & Emerald)
+                    </span>
+                    {themeMode === 'academic-light' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
+                  </button>
+                  <button
+                    onClick={() => {
+                      onThemeChange('midnight-emerald');
+                      setShowThemeDropdown(false);
+                    }}
+                    className={`w-full px-3 py-2 text-left flex items-center justify-between transition-colors ${
+                      themeMode === 'midnight-emerald'
+                        ? 'bg-emerald-600/30 text-emerald-300 font-bold'
+                        : 'text-slate-300 hover:bg-slate-800'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <Moon className="w-4 h-4 text-emerald-400" />
+                      Midnight Slate & Emerald
+                    </span>
+                    {themeMode === 'midnight-emerald' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
+                  </button>
+                  <button
+                    onClick={() => {
+                      onThemeChange('deep-navy');
+                      setShowThemeDropdown(false);
+                    }}
+                    className={`w-full px-3 py-2 text-left flex items-center justify-between transition-colors ${
+                      themeMode === 'deep-navy'
+                        ? 'bg-indigo-600/30 text-indigo-300 font-bold'
+                        : 'text-slate-300 hover:bg-slate-800'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <Palette className="w-4 h-4 text-indigo-400" />
+                      Royal Navy & Sapphire
+                    </span>
+                    {themeMode === 'deep-navy' && <CheckCircle2 className="w-3.5 h-3.5 text-indigo-400" />}
                   </button>
                 </div>
               )}

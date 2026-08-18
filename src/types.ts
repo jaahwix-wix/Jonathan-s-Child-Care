@@ -360,4 +360,78 @@ export interface OrphanRecord {
   };
 }
 
+// ----------------------------------------------------
+// Science Lab Resource Allocation & Scheduling Types
+// ----------------------------------------------------
+
+export type AllocationStatus = 'Confirmed' | 'In Use' | 'Completed' | 'Cancelled';
+
+export interface EquipmentAllocation {
+  id: string; // e.g. "ALC-101"
+  equipmentId: string; // references LabEquipment.id
+  equipmentName: string;
+  category?: 'Biology' | 'Chemistry' | 'Physics' | 'Mathematics' | 'STEM Robotics';
+  equipmentCategory?: string;
+  teacherName: string;
+  teacherDepartment: string;
+  teacherPhone?: string;
+  targetClass?: string; // e.g. "JSS 2 (STEM Track)"
+  targetGrade?: string;
+  subject?: string;
+  experimentTitle?: string;
+  purpose?: string;
+  labStation: string; // e.g. "Station Alpha (Optics Bench)"
+  allocatedDate?: string; // "YYYY-MM-DD"
+  date?: string;
+  timeSlot: string; // e.g. "08:30 AM - 10:00 AM"
+  quantityAllocated: number; // e.g. 10
+  status: AllocationStatus;
+  notes?: string;
+  approvedBy?: string;
+  createdAt?: string;
+  allocatedAt?: string;
+  safetyChecklistVerified?: boolean;
+}
+
+export interface ConflictCheckResult {
+  hasConflict: boolean;
+  type?: 'EQUIPMENT_OVERBOOKED' | 'TEACHER_DOUBLE_BOOKED' | 'STATION_OCCUPIED' | 'EQUIPMENT_CAPACITY_EXCEEDED' | 'NO_CONFLICT' | 'NONE' | string;
+  conflictType?: 'EQUIPMENT_OVERBOOKED' | 'TEACHER_DOUBLE_BOOKED' | 'STATION_OCCUPIED' | 'NO_CONFLICT' | string;
+  conflictMessage?: string;
+  conflictingAllocation?: EquipmentAllocation;
+  conflictingAllocations?: EquipmentAllocation[];
+  availableQuantity?: number;
+  requestedQuantity?: number;
+  totalQuantity?: number;
+  suggestedAlternativeSlots?: (string | {
+    timeSlot: string;
+    station?: string;
+    availableQuantity?: number;
+    description?: string;
+  })[];
+  alternativeSuggestions?: {
+    timeSlot: string;
+    station: string;
+    availableQuantity: number;
+  }[];
+}
+
+export interface LabTeacher {
+  id: string;
+  name: string;
+  department: string;
+  email: string;
+  phone?: string;
+  avatar: string;
+}
+
+export interface LabStation {
+  id: string;
+  name: string;
+  capacity: number;
+  stationType: 'Optics & Light' | 'Titration & Chemistry' | 'Electronics & Solar' | 'General Microscope' | 'Geometry & Math';
+}
+
+export type ThemeMode = 'academic-light' | 'midnight-emerald' | 'deep-navy';
+
 

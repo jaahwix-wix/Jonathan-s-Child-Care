@@ -1,6 +1,6 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { Student, Player, FeeInstallment, PaymentTransaction, OrphanRecord } from '../types';
+import { Student, Player, FeeInstallment, PaymentTransaction, OrphanRecord, EquipmentAllocation } from '../types';
 
 export const exportStudentsPdf = (students: Student[]) => {
   const doc = new jsPDF({
@@ -762,5 +762,174 @@ export const exportOrphanWelfarePdf = (orphan: OrphanRecord) => {
   }
 
   doc.save(`JCC_Welfare_Dossier_${orphan.fullName.replace(/ /g, '_')}_${orphan.id}.pdf`);
+};
+
+export const exportLabAllocationsPdf = (allocations: EquipmentAllocation[]) => {
+  const doc = new jsPDF({
+    orientation: 'landscape',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  // Header Banner
+  doc.setFillColor(15, 23, 42); // slate-900
+  doc.rect(0, 0, 297, 28, 'F');
+
+  // Title Text
+  doc.setTextColor(6, 182, 212); // cyan-500
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text("JONATHAN'S CHILD CARE SCIENCE & MATH LABORATORY", 14, 11);
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(9.5);
+  doc.setFont('helvetica', 'normal');
+  doc.text("Bo District, Sierra Leone • STEM Teaching Lab Resource Allocation Ledger", 14, 17);
+
+  doc.setTextColor(226, 232, 240);
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.text("OFFICIAL TEACHER EQUIPMENT SCHEDULE & ANTI-DOUBLE-BOOKING AUDIT", 14, 24);
+
+  const dateStr = new Date().toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+
+  doc.setTextColor(51, 65, 85);
+  doc.setFontSize(8.5);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Schedule Export Date: ${dateStr}`, 14, 34);
+  doc.text(`Total Active Allocations: ${allocations.length}`, 14, 39);
+
+  const tableHead = [['ID', 'Date & Slot', 'Teacher & Dept', 'Equipment Apparatus', 'Units', 'Station / Location', 'Target Class', 'Status']];
+  const tableData = allocations.map((a) => [
+    a.id,
+    `${a.date}\n${a.timeSlot}`,
+    `${a.teacherName}\n${a.teacherDepartment}`,
+    `${a.equipmentName}\n(${a.equipmentCategory})`,
+    `${a.quantityAllocated}`,
+    a.labStation,
+    `${a.targetGrade} - ${a.subject}`,
+    a.status,
+  ]);
+
+  autoTable(doc, {
+    startY: 44,
+    head: tableHead,
+    body: tableData,
+    theme: 'grid',
+    headStyles: { fillColor: [8, 145, 178], fontSize: 8.5 },
+    bodyStyles: { fontSize: 8 },
+    columnStyles: {
+      0: { cellWidth: 22 },
+      1: { cellWidth: 38 },
+      2: { cellWidth: 46 },
+      3: { cellWidth: 55 },
+      4: { cellWidth: 15, halign: 'center' },
+      5: { cellWidth: 42 },
+      6: { cellWidth: 32 },
+      7: { cellWidth: 22 },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  const finalY = (doc as any).lastAutoTable?.finalY || 160;
+  if (finalY + 20 < 200) {
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    doc.text("Supervising STEM Lab Officer: Mr. Emmanuel Bio (Sign: ___________________________)", 14, finalY + 12);
+    doc.text("Principal / Head of Science: Mrs. Fatmata Sesay (Sign: ___________________________)", 150, finalY + 12);
+  }
+
+  doc.save(`JCC_Science_Lab_Resource_Allocation_${dateStr.replace(/ /g, '_')}.pdf`);
+};
+
+export const exportEquipmentPassPdf = (allocation: EquipmentAllocation) => {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a5',
+  });
+
+  // Border & Header
+  doc.setDrawColor(8, 145, 178);
+  doc.setLineWidth(1);
+  doc.roundedRect(6, 6, 136, 198, 4, 4);
+
+  doc.setFillColor(15, 23, 42);
+  doc.roundedRect(8, 8, 132, 28, 3, 3, 'F');
+
+  doc.setTextColor(6, 182, 212);
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.text("JONATHAN'S CHILD CARE MINISTRIES", 12, 16);
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.text("Bo District, Sierra Leone • STEM Teaching Laboratory", 12, 22);
+
+  doc.setTextColor(226, 232, 240);
+  doc.setFontSize(9.5);
+  doc.setFont('helvetica', 'bold');
+  doc.text("OFFICIAL LAB EQUIPMENT CHECKOUT PASS", 12, 30);
+
+  let curY = 44;
+
+  doc.setFillColor(241, 245, 249);
+  doc.roundedRect(10, curY, 128, 18, 2, 2, 'F');
+  doc.setTextColor(15, 23, 42);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`Pass ID: ${allocation.id}`, 14, curY + 6);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Status: ${allocation.status} • Approved By: ${allocation.approvedBy}`, 14, curY + 12);
+
+  curY += 24;
+
+  const details = [
+    ['Instructor / Teacher:', allocation.teacherName],
+    ['Department:', allocation.teacherDepartment],
+    ['Contact Phone:', allocation.teacherPhone],
+    ['Date of Session:', allocation.date],
+    ['Time Slot:', allocation.timeSlot],
+    ['Equipment Apparatus:', `${allocation.equipmentName} (${allocation.equipmentCategory})`],
+    ['Quantity Allocated:', `${allocation.quantityAllocated} Units`],
+    ['Assigned Station:', allocation.labStation],
+    ['Subject / Target Grade:', `${allocation.subject} - ${allocation.targetGrade}`],
+    ['Experiment Purpose:', allocation.purpose],
+  ];
+
+  autoTable(doc, {
+    startY: curY,
+    body: details,
+    theme: 'plain',
+    styles: { fontSize: 8, cellPadding: 2 },
+    columnStyles: {
+      0: { cellWidth: 42, fontStyle: 'bold', textColor: [51, 65, 85] },
+      1: { cellWidth: 80, textColor: [15, 23, 42] },
+    },
+    margin: { left: 10, right: 10 },
+  });
+
+  const finalY = (doc as any).lastAutoTable?.finalY || 140;
+
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(10, finalY + 4, 128, 28, 2, 2, 'F');
+  doc.setFontSize(7.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text("SAFETY & HANDOVER COVENANT:", 14, finalY + 10);
+  doc.text("1. All apparatus must be returned cleaned and calibrated immediately after session.", 14, finalY + 15);
+  doc.text("2. Any breakage or anomaly must be reported directly to Mr. Emmanuel Bio.", 14, finalY + 20);
+  doc.text("3. Laboratory safety goggles and teacher supervision required at all times.", 14, finalY + 25);
+
+  doc.setFontSize(8);
+  doc.setTextColor(15, 23, 42);
+  doc.text("Teacher Signature: __________________", 12, 192);
+  doc.text("Lab Officer: __________________", 80, 192);
+
+  doc.save(`JCC_Lab_Pass_${allocation.id}_${allocation.teacherName.replace(/ /g, '_')}.pdf`);
 };
 

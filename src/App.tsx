@@ -15,6 +15,7 @@ import {
   Student,
   LabEquipment,
   LabSession,
+  EquipmentAllocation,
   Player,
   Match,
   Trophy,
@@ -25,6 +26,7 @@ import {
   OrphanRecord,
   FeeNotification,
   NotificationUrgency,
+  ThemeMode,
 } from './types';
 
 import {
@@ -32,6 +34,7 @@ import {
   INITIAL_ORPHANS,
   INITIAL_LAB_EQUIPMENT,
   INITIAL_LAB_SESSIONS,
+  INITIAL_EQUIPMENT_ALLOCATIONS,
   INITIAL_PLAYERS,
   INITIAL_MATCHES,
   TROPHIES,
@@ -47,6 +50,17 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState<UserSession>(DEFAULT_USERS[0]);
 
+  // Theme Management (Defaulting to Academic Light)
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
+    const saved = localStorage.getItem('jcc_theme_mode') as ThemeMode;
+    return saved || 'academic-light';
+  });
+
+  const handleThemeChange = (newTheme: ThemeMode) => {
+    setThemeMode(newTheme);
+    localStorage.setItem('jcc_theme_mode', newTheme);
+  };
+
   const [activeTab, setActiveTab] = useState<ModuleTab>('overview');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -55,6 +69,7 @@ export default function App() {
   const [orphans, setOrphans] = useState<OrphanRecord[]>(INITIAL_ORPHANS);
   const [labEquipment, setLabEquipment] = useState<LabEquipment[]>(INITIAL_LAB_EQUIPMENT);
   const [labSessions, setLabSessions] = useState<LabSession[]>(INITIAL_LAB_SESSIONS);
+  const [allocations, setAllocations] = useState<EquipmentAllocation[]>(INITIAL_EQUIPMENT_ALLOCATIONS);
   const [players, setPlayers] = useState<Player[]>(INITIAL_PLAYERS);
   const [matches, setMatches] = useState<Match[]>(INITIAL_MATCHES);
   const [events, setEvents] = useState<CommunityEvent[]>(INITIAL_EVENTS);
@@ -112,13 +127,26 @@ export default function App() {
     setOrphans((prev) => prev.map((o) => (o.id === updatedOrphan.id ? updatedOrphan : o)));
   };
 
-  // Science Lab Handlers
+  // Science Lab Apparatus & Session Handlers
   const handleAddEquipment = (item: LabEquipment) => {
     setLabEquipment((prev) => [item, ...prev]);
   };
 
   const handleAddLabSession = (session: LabSession) => {
     setLabSessions((prev) => [session, ...prev]);
+  };
+
+  // Science Lab Resource Allocation Handlers (Anti-Double-Booking)
+  const handleAddAllocation = (newAlloc: EquipmentAllocation) => {
+    setAllocations((prev) => [newAlloc, ...prev]);
+  };
+
+  const handleUpdateAllocation = (updatedAlloc: EquipmentAllocation) => {
+    setAllocations((prev) => prev.map((a) => (a.id === updatedAlloc.id ? updatedAlloc : a)));
+  };
+
+  const handleDeleteAllocation = (allocId: string) => {
+    setAllocations((prev) => prev.filter((a) => a.id !== allocId));
   };
 
   // JCC FC Player CRUD Handlers
@@ -167,8 +195,16 @@ export default function App() {
     );
   }
 
+  // Determine root theme class names
+  const themeClasses =
+    themeMode === 'academic-light'
+      ? 'min-h-screen bg-slate-900 text-slate-100 font-sans selection:bg-emerald-500 selection:text-white flex flex-col justify-between'
+      : themeMode === 'deep-navy'
+      ? 'min-h-screen bg-[#070c1b] text-slate-100 font-sans selection:bg-indigo-500 selection:text-white flex flex-col justify-between'
+      : 'min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-emerald-500 selection:text-slate-950 flex flex-col justify-between';
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-emerald-500 selection:text-slate-950 flex flex-col justify-between">
+    <div className={themeClasses} data-theme={themeMode} id="app-root-container">
       <div>
         {/* Navigation Header */}
         <Navbar
@@ -182,6 +218,9 @@ export default function App() {
           students={students}
           players={players}
           orphans={orphans}
+          allocations={allocations}
+          themeMode={themeMode}
+          onThemeChange={handleThemeChange}
         />
 
         {/* Main Workspace Body */}
@@ -231,8 +270,12 @@ export default function App() {
             <ScienceLabPortal
               equipment={labEquipment}
               labSessions={labSessions}
+              allocations={allocations}
               onAddEquipment={handleAddEquipment}
               onAddLabSession={handleAddLabSession}
+              onAddAllocation={handleAddAllocation}
+              onUpdateAllocation={handleUpdateAllocation}
+              onDeleteAllocation={handleDeleteAllocation}
               searchQuery={searchQuery}
             />
           )}
@@ -278,7 +321,7 @@ export default function App() {
       </div>
 
       {/* Footer */}
-      <footer className="bg-slate-900 border-t border-slate-800 text-slate-400 py-8 px-4 mt-12">
+      <footer className="bg-slate-900/90 backdrop-blur-md border-t border-slate-800 text-slate-400 py-8 px-4 mt-12">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-xs">
           <div className="flex items-center gap-3 text-center md:text-left">
             <div className="w-10 h-10 rounded-lg bg-white p-1 shadow-md border border-slate-700 shrink-0">
@@ -297,11 +340,11 @@ export default function App() {
             </div>
           </div>
           <div className="flex items-center gap-6">
-            <button onClick={() => setActiveTab('school')} className="hover:text-emerald-400">Academic School</button>
-            <button onClick={() => setActiveTab('orphanage')} className="hover:text-rose-400 font-semibold">Orphanage & Welfare</button>
-            <button onClick={() => setActiveTab('science-lab')} className="hover:text-cyan-400">Science Lab</button>
-            <button onClick={() => setActiveTab('jcc-fc')} className="hover:text-amber-400">JCC FC</button>
-            <button onClick={() => setActiveTab('sponsorship')} className="hover:text-emerald-400">Support JCC</button>
+            <button onClick={() => setActiveTab('school')} className="hover:text-emerald-400 transition-colors">Academic School</button>
+            <button onClick={() => setActiveTab('orphanage')} className="hover:text-rose-400 font-semibold transition-colors">Orphanage & Welfare</button>
+            <button onClick={() => setActiveTab('science-lab')} className="hover:text-cyan-400 transition-colors">Science Lab</button>
+            <button onClick={() => setActiveTab('jcc-fc')} className="hover:text-amber-400 transition-colors">JCC FC</button>
+            <button onClick={() => setActiveTab('sponsorship')} className="hover:text-emerald-400 transition-colors">Support JCC</button>
           </div>
         </div>
       </footer>

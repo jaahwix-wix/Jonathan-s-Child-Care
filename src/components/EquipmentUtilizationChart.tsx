@@ -68,45 +68,36 @@ export const EquipmentUtilizationChart: React.FC<EquipmentUtilizationChartProps>
       }
     >();
 
-    // Baseline historical usage weight for realistic 30-day view
-    const baselineMonthlyUsage: Record<string, { bookings: number; units: number; hours: number; peakDay: string }> = {
-      'LAB-EQ-01': { bookings: 18, units: 142, hours: 27, peakDay: 'Tuesdays & Thursdays' }, // Binocular Microscopes
-      'LAB-EQ-02': { bookings: 14, units: 110, hours: 21, peakDay: 'Mondays' }, // Vernier Calipers
-      'LAB-EQ-03': { bookings: 22, units: 195, hours: 33, peakDay: 'Wednesdays & Fridays' }, // Titration Sets
-      'LAB-EQ-04': { bookings: 9, units: 68, hours: 14, peakDay: 'Tuesdays' }, // 3D Geometry
-      'LAB-EQ-05': { bookings: 16, units: 98, hours: 24, peakDay: 'Thursdays' }, // Solar PV Kits
-      'LAB-EQ-06': { bookings: 12, units: 76, hours: 18, peakDay: 'Saturdays (STEM Club)' }, // Arduino Kits
-    };
-
     equipment.forEach((eq) => {
-      const base = baselineMonthlyUsage[eq.id] || {
-        bookings: 6,
-        units: eq.quantity * 3,
-        hours: 10,
-        peakDay: 'Wednesdays',
-      };
-
       // Add dynamic live allocations count
       const activeAllocs = allocations.filter(
         (a) => a.equipmentId === eq.id || a.equipmentName.toLowerCase().includes(eq.name.toLowerCase().slice(0, 8))
       );
 
-      const dynamicUnits = activeAllocs.reduce((sum, a) => sum + (a.quantityAllocated || 1), 0);
-      const dynamicBookings = activeAllocs.length;
-      const totalBookings = base.bookings + dynamicBookings;
-      const totalUnitsAllocated = base.units + dynamicUnits;
-      const hoursInUse = base.hours + dynamicBookings * 1.5;
+      const totalUnitsAllocated = activeAllocs.reduce((sum, a) => sum + (a.quantityAllocated || 1), 0);
+      const totalBookings = activeAllocs.length;
+      const hoursInUse = totalBookings * 1.5;
 
       // Calculate utilization percentage over 30 days (assuming ~80 available lab hours/month)
-      const maxPossibleCapacityUnits = eq.quantity * 20; // 20 typical lab slots
-      const utilizationRate = Math.min(100, Math.round((totalUnitsAllocated / Math.max(1, maxPossibleCapacityUnits)) * 100));
+      const maxPossibleCapacityUnits = Math.max(1, eq.quantity * 20); // 20 typical lab slots
+      const utilizationRate = Math.min(100, Math.round((totalUnitsAllocated / maxPossibleCapacityUnits) * 100));
 
-      let demandLevel: 'High Demand' | 'Moderate Demand' | 'Under-Utilized' = 'Moderate Demand';
-      if (totalBookings >= 18 || utilizationRate >= 65) {
+      let demandLevel: 'High Demand' | 'Moderate Demand' | 'Under-Utilized' = 'Under-Utilized';
+      if (totalBookings >= 5 || utilizationRate >= 50) {
         demandLevel = 'High Demand';
-      } else if (totalBookings < 10 && utilizationRate < 35) {
-        demandLevel = 'Under-Utilized';
+      } else if (totalBookings >= 2 || utilizationRate >= 20) {
+        demandLevel = 'Moderate Demand';
       }
+
+      // Calculate peak demand day from allocations if any
+      const dayCounts: Record<string, number> = {};
+      activeAllocs.forEach((a) => {
+        const d = a.allocatedDate ? new Date(a.allocatedDate).toLocaleDateString('en-US', { weekday: 'long' }) : 'School Day';
+        dayCounts[d] = (dayCounts[d] || 0) + 1;
+      });
+      const peakDemandDay = Object.keys(dayCounts).length > 0
+        ? Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0][0]
+        : 'Scheduled on Demand';
 
       map.set(eq.id, {
         id: eq.id,
@@ -117,7 +108,7 @@ export const EquipmentUtilizationChart: React.FC<EquipmentUtilizationChartProps>
         totalUnitsAllocated,
         sessionsCount: totalBookings,
         estimatedHoursInUse: Math.round(hoursInUse),
-        peakDemandDay: base.peakDay,
+        peakDemandDay,
         demandLevel,
       });
     });

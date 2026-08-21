@@ -25,52 +25,16 @@ export const ASSET_IMAGES = {
   scienceLab: '/src/assets/images/jcc_science_lab_1786615172733.jpg',
 };
 
-// System Administrative Staff & Roles for Access Gateway
+// System Administrative Staff & Roles for Access Gateway (Admin Only)
 export const DEFAULT_USERS: UserSession[] = [
   {
     id: 'USR-01',
-    name: 'Dr. Jonathan Davies',
+    name: 'Winston Davies',
     role: 'Director / Administrator',
-    email: 'director@jonathanschildcare.org',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    department: 'JCC Bo Executive Board',
-    privileges: ['Full System Control', 'Academic Oversight', 'Financial Grants Approval', 'JCC FC Operations', 'Orphanage Privacy Access', 'AI Command Center'],
-  },
-  {
-    id: 'USR-05',
-    name: 'Mrs. Aminata Conteh',
-    role: 'Welfare & Orphanage Officer',
-    email: 'welfare@jonathanschildcare.org',
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-    department: 'Child Protection & Residential Welfare',
-    privileges: ['Orphan Intake & Case Logs', 'Daily Care Schedules', 'Guardian & Kinship Tracking', 'Confidential Medical Dossiers', 'MSWGCA Liaison'],
-  },
-  {
-    id: 'USR-02',
-    name: 'Mrs. Fatmata Sesay',
-    role: 'Head Teacher',
-    email: 'academics@jonathanschildcare.org',
-    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-    department: 'Primary & JSS Academic Faculty',
-    privileges: ['Student Enrollment', 'Grade Entry & Welfare Logs', 'AI Report Generator', 'Fee Collection & Receipts'],
-  },
-  {
-    id: 'USR-03',
-    name: 'Coach Mohamed Turay',
-    role: 'JCC FC Coach',
-    email: 'coach@jccfc.org',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-    department: 'JCC FC Technical Team',
-    privileges: ['Squad Management', 'Match Scheduling', 'Player Wellness & Stats', 'Trophy Cabinet'],
-  },
-  {
-    id: 'USR-04',
-    name: 'Mr. Patrick Senessie',
-    role: 'STEM Lab Specialist',
-    email: 'lab@jonathanschildcare.org',
+    email: 'winston.davies@jonathanschildcare.org',
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-    department: 'Science & Math Laboratory',
-    privileges: ['Apparatus Inventory', 'Practical Session Booking', 'Safety Logs', 'Experiment AI Guide'],
+    department: 'JCC Bo Executive Directorate & Administration',
+    privileges: ['Executive Governance', 'Full System Control', 'Academic Oversight', 'Financial Grants Approval', 'JCC FC Operations', 'Orphanage Privacy Access', 'AI Command Center'],
   },
 ];
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Navbar } from './components/Navbar';
+import { Sidebar } from './components/Sidebar';
+import { TopHeader } from './components/TopHeader';
 import { OverviewDashboard } from './components/OverviewDashboard';
 import { SchoolManagement } from './components/SchoolManagement';
 import { OrphanageManagement } from './components/OrphanageManagement';
@@ -59,6 +60,7 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState<ModuleTab>('overview');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
 
   // Live Firestore-backed Application State
   const [students, setStudents] = useState<Student[]>([]);
@@ -258,26 +260,39 @@ export default function App() {
 
   return (
     <div className={themeClasses} data-theme={themeMode} id="app-root-container">
-      <div>
-        {/* Navigation Header */}
-        <Navbar
+      {/* Left-Hand Side System Menu / Sidebar */}
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        isOpenMobile={isMobileSidebarOpen}
+        setIsOpenMobile={setIsMobileSidebarOpen}
+        currentUser={currentUser}
+        onSwitchUser={setCurrentUser}
+        onLogout={() => setIsAuthenticated(false)}
+        students={students}
+        players={players}
+        orphans={orphans}
+        allocations={allocations}
+        themeMode={themeMode}
+        onThemeChange={handleThemeChange}
+      />
+
+      {/* Main Right-Hand Workspace Area */}
+      <div className="lg:pl-72 flex flex-col flex-1 min-w-0 w-full min-h-screen">
+        {/* Top Header with Search and System Controls */}
+        <TopHeader
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           currentUser={currentUser}
-          onSwitchUser={setCurrentUser}
-          onLogout={() => setIsAuthenticated(false)}
-          students={students}
-          players={players}
-          orphans={orphans}
-          allocations={allocations}
+          onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
           themeMode={themeMode}
           onThemeChange={handleThemeChange}
         />
 
         {/* Main Workspace Body */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {activeTab === 'overview' && (
             <OverviewDashboard
               setActiveTab={setActiveTab}
@@ -371,36 +386,44 @@ export default function App() {
             />
           )}
         </main>
-      </div>
 
-      {/* Footer */}
-      <footer className="bg-slate-900/90 backdrop-blur-md border-t border-slate-800 text-slate-400 py-8 px-4 mt-12">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-xs">
-          <div className="flex items-center gap-3 text-center md:text-left">
-            <div className="w-10 h-10 rounded-lg bg-white p-1 shadow-md border border-slate-700 shrink-0">
-              <img
-                src={ASSET_IMAGES.systemLogo}
-                alt="Jonathan's Child Care Ministries Logo"
-                className="w-full h-full object-contain rounded"
-                referrerPolicy="no-referrer"
-              />
+        {/* System Footer */}
+        <footer className={`backdrop-blur-md border-t py-6 px-4 mt-auto transition-colors ${
+          themeMode === 'academic-light'
+            ? 'bg-slate-50 border-slate-200 text-slate-600'
+            : 'bg-slate-900/90 border-slate-800 text-slate-400'
+        }`}>
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-xs">
+            <div className="flex items-center gap-3 text-center md:text-left">
+              <div className={`w-10 h-10 rounded-lg bg-white p-1 shadow-md border shrink-0 ${
+                themeMode === 'academic-light' ? 'border-slate-200' : 'border-slate-700'
+              }`}>
+                <img
+                  src={ASSET_IMAGES.systemLogo}
+                  alt="Jonathan's Child Care Ministries Logo"
+                  className="w-full h-full object-contain rounded"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+              <div className="space-y-0.5">
+                <p className={`font-bold text-sm ${themeMode === 'academic-light' ? 'text-slate-900' : 'text-white'}`}>
+                  Jonathan's Child Care (JCC) & JCC FC
+                </p>
+                <p className={themeMode === 'academic-light' ? 'text-slate-500' : 'text-slate-400'}>
+                  Bo District, Sierra Leone • Operating over 20 years in Child Care, High Academic Standards & Women's Football
+                </p>
+              </div>
             </div>
-            <div className="space-y-0.5">
-              <p className="font-bold text-white text-sm">Jonathan's Child Care (JCC) & JCC FC</p>
-              <p className="text-slate-400">
-                Bo District, Sierra Leone • Operating over 20 years in Child Care, High Academic Standards & Women's Football
-              </p>
+            <div className="flex items-center gap-4 sm:gap-6 flex-wrap justify-center font-medium">
+              <button onClick={() => setActiveTab('school')} className="hover:text-emerald-600 transition-colors">Academic School</button>
+              <button onClick={() => setActiveTab('orphanage')} className="hover:text-rose-600 font-semibold transition-colors">Orphanage & Welfare</button>
+              <button onClick={() => setActiveTab('science-lab')} className="hover:text-cyan-600 transition-colors">Science Lab</button>
+              <button onClick={() => setActiveTab('jcc-fc')} className="hover:text-amber-600 transition-colors">JCC FC</button>
+              <button onClick={() => setActiveTab('sponsorship')} className="hover:text-emerald-600 transition-colors">Support JCC</button>
             </div>
           </div>
-          <div className="flex items-center gap-6">
-            <button onClick={() => setActiveTab('school')} className="hover:text-emerald-400 transition-colors">Academic School</button>
-            <button onClick={() => setActiveTab('orphanage')} className="hover:text-rose-400 font-semibold transition-colors">Orphanage & Welfare</button>
-            <button onClick={() => setActiveTab('science-lab')} className="hover:text-cyan-400 transition-colors">Science Lab</button>
-            <button onClick={() => setActiveTab('jcc-fc')} className="hover:text-amber-400 transition-colors">JCC FC</button>
-            <button onClick={() => setActiveTab('sponsorship')} className="hover:text-emerald-400 transition-colors">Support JCC</button>
-          </div>
-        </div>
-      </footer>
+        </footer>
+      </div>
     </div>
   );
 }

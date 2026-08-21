@@ -45,32 +45,47 @@ export const EnrollmentTrendChart: React.FC<EnrollmentTrendChartProps> = ({
   const [timeRange, setTimeRange] = useState<TimeRange>('all');
   const [hoveredPoint, setHoveredPoint] = useState<EnrollmentDataPoint | null>(null);
 
+  // Default empty 12-month baseline if dataset is empty
+  const effectiveData: EnrollmentDataPoint[] = useMemo(() => {
+    if (data && data.length > 0) return data;
+    const months = ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
+    return months.map((m) => ({
+      month: m,
+      total: 0,
+      nursery: 0,
+      primarySchool: 0,
+      jssStem: 0,
+      girls: 0,
+      boys: 0,
+      newAdmissions: 0,
+      attendanceRate: 0,
+    }));
+  }, [data]);
+
   // Filter data based on selected timeframe
   const filteredData = useMemo(() => {
     if (timeRange === '6m') {
-      return data.slice(-6);
+      return effectiveData.slice(-6);
     }
     if (timeRange === 'term1') {
-      return data.slice(0, 6);
+      return effectiveData.slice(0, 6);
     }
-    return data;
-  }, [data, timeRange]);
+    return effectiveData;
+  }, [effectiveData, timeRange]);
 
-  // Derived calculations
-  const latestMonth = data[data.length - 1];
-  const startMonth = data[0];
-  const totalGrowthPercent = (
-    ((latestMonth.total - startMonth.total) / startMonth.total) *
-    100
-  ).toFixed(1);
-  const totalIntake = data.reduce((acc, curr) => acc + curr.newAdmissions, 0);
-  const averageAttendance = (
-    data.reduce((acc, curr) => acc + curr.attendanceRate, 0) / data.length
-  ).toFixed(1);
-  const girlsPercentage = (
-    (latestMonth.girls / latestMonth.total) *
-    100
-  ).toFixed(1);
+  // Derived calculations safely
+  const latestMonth = effectiveData[effectiveData.length - 1] || { total: 0, girls: 0 };
+  const startMonth = effectiveData[0] || { total: 0, girls: 0 };
+  const totalGrowthPercent = startMonth.total > 0
+    ? (((latestMonth.total - startMonth.total) / startMonth.total) * 100).toFixed(1)
+    : '0.0';
+  const totalIntake = effectiveData.reduce((acc, curr) => acc + curr.newAdmissions, 0);
+  const averageAttendance = effectiveData.length > 0
+    ? (effectiveData.reduce((acc, curr) => acc + curr.attendanceRate, 0) / effectiveData.length).toFixed(1)
+    : '0.0';
+  const girlsPercentage = latestMonth.total > 0
+    ? ((latestMonth.girls / latestMonth.total) * 100).toFixed(1)
+    : '0.0';
 
   // Custom Tooltip component for dark aesthetic
   const CustomTooltip = ({ active, payload, label }: any) => {

@@ -143,15 +143,15 @@ export const LoginGateway: React.FC<LoginGatewayProps> = ({ onLoginSuccess }) =>
           <div className="space-y-6">
             <div>
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <User className="w-5 h-5 text-emerald-400" /> Select Authorized Profile
+                <User className="w-5 h-5 text-emerald-400" /> Administrator Authentication
               </h3>
               <p className="text-xs text-slate-400 mt-1">
-                All staff users must authenticate with role credentials to access administrative student, player, and lab records.
+                Authenticate with Administrator role credentials to access executive academic, student, player, and science lab records.
               </p>
             </div>
 
             {/* Profile Selection Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 gap-2.5">
               {DEFAULT_USERS.map((user) => {
                 const isSelected = selectedUser.id === user.id;
                 return (

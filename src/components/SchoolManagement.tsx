@@ -44,12 +44,15 @@ import {
   FeeNotification,
   NotificationUrgency,
   NotificationChannel,
+  DailyAttendanceRecord,
 } from '../types';
 import { exportStudentsPdf, exportFeeReceiptPdf } from '../utils/pdfExporter';
 import { SCHOOL_TIER_CONFIG } from '../data/mockData';
 import { FeeNotificationCenter } from './FeeNotificationCenter';
 import { StudentDirectoryTreeView } from './StudentDirectoryTreeView';
 import { StudentIdCardModal } from './StudentIdCardModal';
+import { DailyAttendanceTracker } from './DailyAttendanceTracker';
+import { MonthlyAttendanceChart } from './MonthlyAttendanceChart';
 
 interface SchoolManagementProps {
   students: Student[];
@@ -77,7 +80,7 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
   searchQuery,
 }) => {
   // Sub-view switcher
-  const [subView, setSubView] = useState<'roster' | 'treeview' | 'notifications' | 'matrix'>('roster');
+  const [subView, setSubView] = useState<'roster' | 'treeview' | 'attendance' | 'notifications' | 'matrix'>('roster');
 
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [idCardStudent, setIdCardStudent] = useState<Student | null>(null);
@@ -99,7 +102,7 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Student Detail Modal active tab
-  const [detailTab, setDetailTab] = useState<'academics' | 'fees' | 'welfare'>('fees');
+  const [detailTab, setDetailTab] = useState<'academics' | 'fees' | 'attendance' | 'welfare'>('fees');
 
   // AI Report State
   const [aiReportOutput, setAiReportOutput] = useState<string>('');
@@ -663,6 +666,18 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
         </button>
 
         <button
+          onClick={() => setSubView('attendance')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            subView === 'attendance'
+              ? 'bg-teal-600 text-white shadow-md'
+              : 'text-slate-300 hover:bg-slate-800'
+          }`}
+        >
+          <Calendar className="w-4 h-4 text-teal-300" />
+          <span>Daily Attendance Roll-Call</span>
+        </button>
+
+        <button
           onClick={() => setSubView('notifications')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all relative ${
             subView === 'notifications'
@@ -704,6 +719,17 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
             setShowPaymentModal(true);
           }}
           onPrintIdCard={(student) => setIdCardStudent(student)}
+          searchQuery={searchQuery}
+        />
+      )}
+
+      {/* ======================================================== */}
+      {/* TAB 0.5: DAILY ATTENDANCE TRACKER & LIVE ROLL-CALL */}
+      {/* ======================================================== */}
+      {subView === 'attendance' && (
+        <DailyAttendanceTracker
+          students={students}
+          onUpdateStudent={onUpdateStudent}
           searchQuery={searchQuery}
         />
       )}
@@ -1238,6 +1264,14 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
                 Fee Installments & Receipts
               </button>
               <button
+                onClick={() => setDetailTab('attendance')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  detailTab === 'attendance' ? 'bg-teal-600 text-white' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Attendance Log
+              </button>
+              <button
                 onClick={() => setDetailTab('academics')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   detailTab === 'academics' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
@@ -1324,6 +1358,152 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
                       </div>
                     ))}
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Attendance Tab Content */}
+            {detailTab === 'attendance' && (
+              <div className="space-y-4 text-xs">
+                {/* Monthly Attendance Patterns Bar Chart Sub-Component */}
+                <MonthlyAttendanceChart
+                  students={students}
+                  studentId={selectedStudent.id}
+                  compact={true}
+                />
+
+                <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <span className="text-[10px] text-slate-400 uppercase font-bold block">Term Attendance Rate</span>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className={`text-xl font-black ${
+                        selectedStudent.attendanceRate >= 85
+                          ? 'text-emerald-400'
+                          : selectedStudent.attendanceRate >= 70
+                          ? 'text-amber-400'
+                          : 'text-rose-400'
+                      }`}>
+                        {selectedStudent.attendanceRate}%
+                      </span>
+                      <span className="text-[11px] text-slate-400">
+                        ({selectedStudent.attendanceRate >= 85 ? 'Excellent' : selectedStudent.attendanceRate >= 70 ? 'Regular' : 'Needs Monitoring'})
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] text-slate-400 uppercase font-bold block">Last Recorded Update</span>
+                    <span className="text-xs font-mono text-slate-300">
+                      {selectedStudent.lastAttendanceUpdate
+                        ? new Date(selectedStudent.lastAttendanceUpdate).toLocaleString()
+                        : 'No records logged yet'}
+                    </span>
+                  </div>
+
+                  {/* Today's quick toggle right from modal */}
+                  <div>
+                    <span className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Today's Status</span>
+                    {(() => {
+                      const todayStr = new Date().toISOString().split('T')[0];
+                      const rec = selectedStudent.dailyAttendance?.[todayStr] as DailyAttendanceRecord | undefined;
+                      const cur = rec?.status || 'Unmarked';
+                      return (
+                        <div className="flex items-center gap-1">
+                          {(['Present', 'Absent', 'Late', 'Excused'] as const).map((st) => (
+                            <button
+                              key={st}
+                              onClick={() => {
+                                const now = new Date().toISOString();
+                                const updatedDaily: Record<string, DailyAttendanceRecord> = {
+                                  ...(selectedStudent.dailyAttendance || {}),
+                                  [todayStr]: {
+                                    date: todayStr,
+                                    status: st,
+                                    timestamp: now,
+                                    recordedBy: 'Director / Teacher',
+                                  },
+                                };
+                                const entries = Object.values(updatedDaily) as DailyAttendanceRecord[];
+                                const attended = entries.filter((e) => e.status === 'Present' || e.status === 'Late' || e.status === 'Excused').length;
+                                const newRate = entries.length > 0 ? Math.round((attended / entries.length) * 100) : 100;
+                                const updated = {
+                                  ...selectedStudent,
+                                  attendanceRate: newRate,
+                                  dailyAttendance: updatedDaily,
+                                  lastAttendanceUpdate: now,
+                                };
+                                setSelectedStudent(updated);
+                                onUpdateStudent(updated);
+                              }}
+                              className={`px-2 py-1 rounded text-[10px] font-bold border transition-colors ${
+                                cur === st
+                                  ? st === 'Present'
+                                    ? 'bg-emerald-600 border-emerald-500 text-white'
+                                    : st === 'Absent'
+                                    ? 'bg-rose-600 border-rose-500 text-white'
+                                    : st === 'Late'
+                                    ? 'bg-amber-600 border-amber-500 text-white'
+                                    : 'bg-purple-600 border-purple-500 text-white'
+                                  : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
+                              }`}
+                            >
+                              {st}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                {/* Historic Logs Table */}
+                <div className="space-y-2">
+                  <h4 className="font-bold text-white text-xs">Logged Roll-Call History</h4>
+                  {Object.keys(selectedStudent.dailyAttendance || {}).length === 0 ? (
+                    <div className="p-6 bg-slate-950 rounded-xl border border-slate-800 text-center text-slate-500">
+                      No daily roll-call timestamps logged for this student yet. Mark attendance from the Daily Attendance Roll-Call tab.
+                    </div>
+                  ) : (
+                    <div className="max-h-52 overflow-y-auto space-y-1.5 pr-1">
+                      {Object.entries(selectedStudent.dailyAttendance || {})
+                        .sort((a, b) => b[0].localeCompare(a[0]))
+                        .map(([date, rec]) => {
+                          const r = rec as DailyAttendanceRecord;
+                          return (
+                            <div
+                              key={date}
+                              className="p-2.5 bg-slate-950 rounded-xl border border-slate-800/80 flex items-center justify-between"
+                            >
+                              <div className="flex items-center gap-2.5">
+                                <span className="font-mono font-bold text-white text-xs">{date}</span>
+                                <span
+                                  className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                                    r.status === 'Present'
+                                      ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
+                                      : r.status === 'Absent'
+                                      ? 'bg-rose-500/10 text-rose-300 border-rose-500/30'
+                                      : r.status === 'Late'
+                                      ? 'bg-amber-500/10 text-amber-300 border-amber-500/30'
+                                      : 'bg-purple-500/10 text-purple-300 border-purple-500/30'
+                                  }`}
+                                >
+                                  {r.status}
+                                </span>
+                              </div>
+
+                              <div className="text-right font-mono text-[10px] text-slate-400">
+                                <span className="text-slate-300">
+                                  {new Date(r.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                </span>
+                                <span className="block text-[9px] text-slate-500 truncate max-w-[130px]">
+                                  {r.recordedBy || 'Teacher'}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

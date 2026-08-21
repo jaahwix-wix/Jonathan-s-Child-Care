@@ -101,6 +101,16 @@ export interface FeeNotification {
   notes?: string;
 }
 
+export type AttendanceStatus = 'Present' | 'Absent' | 'Late' | 'Excused';
+
+export interface DailyAttendanceRecord {
+  date: string; // YYYY-MM-DD
+  status: AttendanceStatus;
+  timestamp: string; // ISO 8601 string
+  recordedBy?: string;
+  notes?: string;
+}
+
 export interface Student {
   id: string;
   name: string;
@@ -116,6 +126,10 @@ export interface Student {
   scholarshipStatus: 'Full Sponsor' | 'Partial Sponsor' | 'Self-Funded';
   grades: SubjectGrade[];
   avatar: string;
+
+  // Daily Attendance Tracking Log
+  dailyAttendance?: Record<string, DailyAttendanceRecord>; // key: YYYY-MM-DD
+  lastAttendanceUpdate?: string; // ISO timestamp of last modification
 
   // School Fees & Installment Ledger
   currency: string; // "NLe"

@@ -9,7 +9,6 @@ import { JccFcManagement } from './components/JccFcManagement';
 import { CommunityEventsHub } from './components/CommunityEventsHub';
 import { SponsorshipPortal } from './components/SponsorshipPortal';
 import { AiCommandCenter } from './components/AiCommandCenter';
-import { LoginGateway } from './components/LoginGateway';
 
 import {
   ModuleTab,
@@ -44,8 +43,7 @@ import {
 } from './services/firestoreService';
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [currentUser, setCurrentUser] = useState<UserSession>(DEFAULT_USERS[0]);
+  const [currentUser] = useState<UserSession>(DEFAULT_USERS[0]);
 
   // Theme Management (Defaulting to Academic Light)
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
@@ -239,17 +237,6 @@ export default function App() {
     await saveDocument(COLLECTIONS.SPONSORSHIPS, spon);
   };
 
-  if (!isAuthenticated) {
-    return (
-      <LoginGateway
-        onLoginSuccess={(user) => {
-          setCurrentUser(user);
-          setIsAuthenticated(true);
-        }}
-      />
-    );
-  }
-
   // Determine root theme class names & layout styling with white default background
   const themeClasses =
     themeMode === 'academic-light'
@@ -267,8 +254,6 @@ export default function App() {
         isOpenMobile={isMobileSidebarOpen}
         setIsOpenMobile={setIsMobileSidebarOpen}
         currentUser={currentUser}
-        onSwitchUser={setCurrentUser}
-        onLogout={() => setIsAuthenticated(false)}
         students={students}
         players={players}
         orphans={orphans}

@@ -4,7 +4,6 @@ import {
   Search,
   Bell,
   HeartHandshake,
-  ShieldCheck,
   MapPin,
   Palette,
   Sun,
@@ -94,13 +93,13 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
             Jonathan's Child Care Ministries & JCC FC
           </span>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-emerald-600 font-medium flex items-center gap-1">
-            <ShieldCheck className="w-3 h-3" /> {currentUser.role}
-          </span>
-          <span className="text-slate-300">|</span>
-          <span className={`font-semibold ${themeMode === 'academic-light' ? 'text-slate-800' : 'text-slate-200'}`}>
+        <div className="flex items-center gap-2">
+          <span className={`text-xs font-semibold ${themeMode === 'academic-light' ? 'text-slate-800' : 'text-slate-200'}`}>
             {currentUser.name}
+          </span>
+          <span className="text-slate-400">•</span>
+          <span className="text-emerald-600 font-medium">
+            {currentUser.role}
           </span>
         </div>
       </div>

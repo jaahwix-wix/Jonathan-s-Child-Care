@@ -71,14 +71,9 @@ export const OrphanageManagement: React.FC<OrphanageManagementProps> = ({
   const [selectedTier, setSelectedTier] = useState<string>('All');
   const [viewMode, setViewMode] = useState<'treeview' | 'cards' | 'table'>('treeview');
   
-  // Privacy & Access Control State
-  const [isPrivacyMasked, setIsPrivacyMasked] = useState<boolean>(true);
-  const [showSecurityPinModal, setShowSecurityPinModal] = useState<boolean>(false);
-  const [enteredPin, setEnteredPin] = useState<string>('');
-  const [pinError, setPinError] = useState<string>('');
-  const [isSuperAuthorized, setIsSuperAuthorized] = useState<boolean>(
-    currentUser.role === 'Director / Administrator' || currentUser.role === 'Welfare & Orphanage Officer'
-  );
+  // Access Control & Privacy State (Unrestricted Direct Access)
+  const [isPrivacyMasked, setIsPrivacyMasked] = useState<boolean>(false);
+  const [isSuperAuthorized] = useState<boolean>(true);
 
   // Modals
   const [selectedOrphan, setSelectedOrphan] = useState<OrphanRecord | null>(null);
@@ -178,19 +173,6 @@ export const OrphanageManagement: React.FC<OrphanageManagementProps> = ({
       o.todayDailyChecklist?.schoolReadiness &&
       o.todayDailyChecklist?.eveningStudyAndWelfare
   ).length;
-
-  const handleVerifyPin = () => {
-    // Authorized Security PIN for Bo Child Protection Officers / Directors
-    if (enteredPin === '7744' || enteredPin === '1234') {
-      setIsSuperAuthorized(true);
-      setIsPrivacyMasked(false);
-      setShowSecurityPinModal(false);
-      setPinError('');
-      setEnteredPin('');
-    } else {
-      setPinError('Invalid Child Safeguarding Security PIN. Authorized officers only.');
-    }
-  };
 
   const handleToggleDailyCheck = (orphanId: string, field: keyof NonNullable<OrphanRecord['todayDailyChecklist']>) => {
     const target = orphans.find((o) => o.id === orphanId);
@@ -382,31 +364,21 @@ export const OrphanageManagement: React.FC<OrphanageManagementProps> = ({
               <ShieldCheck className={`w-4 h-4 ${isPrivacyMasked ? 'text-amber-400' : 'text-emerald-400'}`} />
               <div className="text-left">
                 <span className="block font-medium text-slate-200">
-                  {isPrivacyMasked ? 'Child Privacy Shield Active' : 'Unrestricted Access Mode'}
+                  {isPrivacyMasked ? 'Child Privacy Shield Active' : 'Direct Full Access'}
                 </span>
                 <span className="block text-[10px] text-slate-400">
-                  {isPrivacyMasked ? 'Sensitive IDs & contacts masked' : 'Full confidential records visible'}
+                  {isPrivacyMasked ? 'Sensitive IDs & contacts masked' : 'All confidential records visible'}
                 </span>
               </div>
               <button
-                onClick={() => {
-                  if (isPrivacyMasked) {
-                    if (isSuperAuthorized) {
-                      setIsPrivacyMasked(false);
-                    } else {
-                      setShowSecurityPinModal(true);
-                    }
-                  } else {
-                    setIsPrivacyMasked(true);
-                  }
-                }}
+                onClick={() => setIsPrivacyMasked(!isPrivacyMasked)}
                 className={`ml-2 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
                   isPrivacyMasked
                     ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40'
                     : 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/40'
                 }`}
               >
-                {isPrivacyMasked ? 'Unlock Full Access' : 'Lock Shield'}
+                {isPrivacyMasked ? 'Show Full Records' : 'Mask Records'}
               </button>
             </div>
 
@@ -1448,62 +1420,6 @@ export const OrphanageManagement: React.FC<OrphanageManagementProps> = ({
                 className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold"
               >
                 Close Dossier
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* SECURITY PIN UNLOCK MODAL */}
-      {/* ========================================================================= */}
-      {showSecurityPinModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-amber-500/20 text-amber-400 rounded-xl border border-amber-500/30">
-                <Lock className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="font-bold text-white text-base">Safeguarding Authorization PIN</h3>
-                <p className="text-xs text-slate-400">
-                  Enter Officer clearance PIN to unmask sensitive National IDs & guardian data.
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs text-slate-300 font-medium block">
-                Officer Clearance PIN (Default: 7744 or 1234)
-              </label>
-              <input
-                type="password"
-                maxLength={6}
-                value={enteredPin}
-                onChange={(e) => setEnteredPin(e.target.value)}
-                placeholder="Enter 4-digit security PIN"
-                className="w-full px-3 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white text-center font-mono text-lg tracking-widest focus:outline-none focus:border-rose-500"
-                autoFocus
-              />
-              {pinError && <p className="text-xs text-rose-400">{pinError}</p>}
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                onClick={() => {
-                  setShowSecurityPinModal(false);
-                  setPinError('');
-                  setEnteredPin('');
-                }}
-                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleVerifyPin}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-md"
-              >
-                Unlock Full Access
               </button>
             </div>
           </div>

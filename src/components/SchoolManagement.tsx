@@ -34,9 +34,12 @@ import {
   Folder,
   FolderOpen,
   Printer,
+  Lock,
+  ShieldAlert,
 } from 'lucide-react';
 import {
   Student,
+  Teacher,
   SchoolTier,
   PaymentPlanType,
   FeeInstallment,
@@ -45,6 +48,8 @@ import {
   NotificationUrgency,
   NotificationChannel,
   DailyAttendanceRecord,
+  UserSession,
+  ThemeMode,
 } from '../types';
 import { exportStudentsPdf, exportFeeReceiptPdf } from '../utils/pdfExporter';
 import { SCHOOL_TIER_CONFIG } from '../data/mockData';
@@ -53,34 +58,51 @@ import { StudentDirectoryTreeView } from './StudentDirectoryTreeView';
 import { StudentIdCardModal } from './StudentIdCardModal';
 import { DailyAttendanceTracker } from './DailyAttendanceTracker';
 import { MonthlyAttendanceChart } from './MonthlyAttendanceChart';
+import { TeacherManagement } from './TeacherManagement';
+import { hasPermission } from '../services/authService';
+import { AccessRestrictedBanner } from './AccessRestrictedBanner';
 
 interface SchoolManagementProps {
   students: Student[];
+  teachers?: Teacher[];
   notifications: FeeNotification[];
   onAddStudent: (newStudent: Student) => void;
   onUpdateStudent: (updatedStudent: Student) => void;
   onDeleteStudent: (studentId: string) => void;
+  onAddTeacher?: (newTeacher: Teacher) => void;
+  onUpdateTeacher?: (updatedTeacher: Teacher) => void;
+  onDeleteTeacher?: (teacherId: string) => void;
   onAddNotification: (notif: FeeNotification) => void;
   onUpdateNotification: (notif: FeeNotification) => void;
   onDeleteNotification: (notifId: string) => void;
   onBatchDispatch: (urgencyFilter?: NotificationUrgency) => void;
   searchQuery: string;
+  currentUser?: UserSession;
+  onOpenPrivilegeModal?: () => void;
+  themeMode?: ThemeMode;
 }
 
 export const SchoolManagement: React.FC<SchoolManagementProps> = ({
   students,
+  teachers = [],
   notifications,
   onAddStudent,
   onUpdateStudent,
   onDeleteStudent,
+  onAddTeacher,
+  onUpdateTeacher,
+  onDeleteTeacher,
   onAddNotification,
   onUpdateNotification,
   onDeleteNotification,
   onBatchDispatch,
   searchQuery,
+  currentUser,
+  onOpenPrivilegeModal,
+  themeMode,
 }) => {
   // Sub-view switcher
-  const [subView, setSubView] = useState<'roster' | 'treeview' | 'attendance' | 'notifications' | 'matrix'>('roster');
+  const [subView, setSubView] = useState<'roster' | 'teachers' | 'treeview' | 'attendance' | 'notifications' | 'matrix'>('roster');
 
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [idCardStudent, setIdCardStudent] = useState<Student | null>(null);
@@ -100,6 +122,20 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
   const [quickAlertUrgency, setQuickAlertUrgency] = useState<NotificationUrgency>('Due Imminent (Within 7 Days)');
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // RBAC Privileges & Enforcement: Only Administrator is authorized to register students
+  const isAdmin = currentUser
+    ? currentUser.role === 'Director / Administrator' ||
+      currentUser.email === 'jaahwix@gmail.com' ||
+      currentUser.permissions.includes('system:full_control')
+    : false;
+  const canCreateStudent = isAdmin;
+  const canDeleteStudent = isAdmin;
+  const canManageFees = currentUser ? hasPermission(currentUser, 'fees:manage') : true;
+  const canDispatchFees = currentUser ? hasPermission(currentUser, 'fees:dispatch') : true;
+  const isAcademicStaff = currentUser
+    ? currentUser.role === 'Director / Administrator' || currentUser.role === 'Head Teacher'
+    : true;
 
   // Student Detail Modal active tab
   const [detailTab, setDetailTab] = useState<'academics' | 'fees' | 'attendance' | 'welfare'>('fees');
@@ -248,6 +284,10 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
   // Submit Enrollment (Create Pupil)
   const handleCreateStudent = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canCreateStudent) {
+      showToast('Access Denied: Only the System Administrator can register students.');
+      return;
+    }
     if (!newStudentName.trim()) return;
 
     const studentId = `STU-${newTier === 'Nursery' ? 'N' : newTier === 'Primary' ? 'P' : 'S'}${100 + students.length + 1}`;
@@ -462,6 +502,10 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
 
   // Delete Pupil
   const handleDeleteStudentConfirm = (studentId: string) => {
+    if (!canDeleteStudent) {
+      showToast('Access Denied: Only Head Teacher or Director can delete student records.');
+      return;
+    }
     onDeleteStudent(studentId);
     if (selectedStudent?.id === studentId) {
       setSelectedStudent(null);
@@ -603,6 +647,17 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
         </div>
       )}
 
+      {/* RBAC Access Notice for Non-Academic Staff */}
+      {currentUser && !isAcademicStaff && (
+        <AccessRestrictedBanner
+          actionName="Student Enrollment & Tuition Ledger Modifications"
+          currentRole={currentUser.role}
+          requiredRole="Head Teacher / Academic Administration"
+          onOpenPrivilegeModal={onOpenPrivilegeModal || (() => {})}
+          themeMode={themeMode || 'academic-light'}
+        />
+      )}
+
       {/* Module Title Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
         <div>
@@ -626,13 +681,25 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
             <span>Export Fees Roster PDF</span>
           </button>
 
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-md transition-all flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Enroll New Student</span>
-          </button>
+          {canCreateStudent ? (
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-md transition-all flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Enroll New Student</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onOpenPrivilegeModal}
+              className="px-3.5 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-400 font-semibold text-xs flex items-center gap-2 cursor-pointer hover:bg-slate-750 transition-colors"
+              title="Click to view permissions required to enroll pupils"
+            >
+              <Lock className="w-4 h-4 text-amber-500" />
+              <span>Enrollment Restricted</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -705,7 +772,37 @@ export const SchoolManagement: React.FC<SchoolManagementProps> = ({
           <School className="w-4 h-4" />
           <span>Nursery, Primary & Secondary Fee Matrix</span>
         </button>
+
+        <button
+          onClick={() => setSubView('teachers')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            subView === 'teachers'
+              ? 'bg-blue-600 text-white shadow-md font-black'
+              : 'text-slate-300 hover:bg-slate-800'
+          }`}
+        >
+          <GraduationCap className="w-4 h-4 text-blue-300" />
+          <span>Faculty & Teachers Registry</span>
+          <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] bg-blue-950/80 text-blue-200 font-mono font-bold">
+            {teachers.length}
+          </span>
+        </button>
       </div>
+
+      {/* ======================================================== */}
+      {/* TAB: FACULTY & TEACHERS REGISTRY (ADMIN MANAGED) */}
+      {/* ======================================================== */}
+      {subView === 'teachers' && (
+        <TeacherManagement
+          teachers={teachers}
+          onAddTeacher={onAddTeacher || (() => {})}
+          onUpdateTeacher={onUpdateTeacher || (() => {})}
+          onDeleteTeacher={onDeleteTeacher || (() => {})}
+          currentUser={currentUser}
+          onOpenPrivilegeModal={onOpenPrivilegeModal}
+          themeMode={themeMode}
+        />
+      )}
 
       {/* ======================================================== */}
       {/* TAB 0: PUPILS DIRECTORY TREEVIEW */}

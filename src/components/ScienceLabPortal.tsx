@@ -21,13 +21,16 @@ import {
   Atom,
   BarChart2,
   TrendingUp,
+  Lock,
 } from 'lucide-react';
-import { LabEquipment, LabSession, EquipmentAllocation } from '../types';
+import { LabEquipment, LabSession, EquipmentAllocation, UserSession, ThemeMode } from '../types';
 import { ASSET_IMAGES, LAB_TEACHERS_LIST } from '../data/mockData';
 import { EquipmentAllocationManager } from './EquipmentAllocationManager';
 import { EquipmentUtilizationChart } from './EquipmentUtilizationChart';
 import { LabHierarchyTreeView } from './LabHierarchyTreeView';
 import { exportLabAllocationsPdf } from '../utils/pdfExporter';
+import { hasPermission } from '../services/authService';
+import { AccessRestrictedBanner } from './AccessRestrictedBanner';
 
 interface ScienceLabPortalProps {
   equipment: LabEquipment[];
@@ -39,6 +42,9 @@ interface ScienceLabPortalProps {
   onUpdateAllocation: (allocation: EquipmentAllocation) => void;
   onDeleteAllocation: (allocationId: string) => void;
   searchQuery: string;
+  currentUser?: UserSession;
+  onOpenPrivilegeModal?: () => void;
+  themeMode?: ThemeMode;
 }
 
 export const ScienceLabPortal: React.FC<ScienceLabPortalProps> = ({
@@ -51,6 +57,9 @@ export const ScienceLabPortal: React.FC<ScienceLabPortalProps> = ({
   onUpdateAllocation,
   onDeleteAllocation,
   searchQuery,
+  currentUser,
+  onOpenPrivilegeModal,
+  themeMode,
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'analytics' | 'treeview' | 'allocations' | 'inventory' | 'sessions' | 'stem-ai'>('analytics');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -153,8 +162,21 @@ export const ScienceLabPortal: React.FC<ScienceLabPortalProps> = ({
     setSessTitle('');
   };
 
+  const canManageEquipment = currentUser ? hasPermission(currentUser, 'science:manage_equipment') : true;
+
   return (
     <div className="space-y-6 pb-12" id="science-lab-portal-root">
+      {/* RBAC Access Notice */}
+      {!canManageEquipment && (
+        <AccessRestrictedBanner
+          actionName="STEM Lab Apparatus Allocation & Session Scheduling"
+          currentRole={currentUser ? currentUser.role : 'Public / Sponsor'}
+          requiredRole="STEM Lab Specialist / Director"
+          onOpenPrivilegeModal={onOpenPrivilegeModal || (() => {})}
+          themeMode={themeMode || 'academic-light'}
+        />
+      )}
+
       {/* Banner & Intro Header */}
       <div className="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-xl">
         <div className="absolute inset-0 z-0">

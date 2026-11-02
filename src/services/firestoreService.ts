@@ -20,11 +20,13 @@ import {
   InstagramPost,
   Sponsorship,
   FeeNotification,
+  Teacher,
 } from '../types';
 
 // Collection Names
 export const COLLECTIONS = {
   STUDENTS: 'students',
+  TEACHERS: 'teachers',
   ORPHANS: 'orphans',
   LAB_EQUIPMENT: 'lab_equipment',
   LAB_SESSIONS: 'lab_sessions',

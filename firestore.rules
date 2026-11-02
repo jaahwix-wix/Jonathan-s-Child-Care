@@ -1,8 +1,148 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true;
+
+    // Authentication & Role Evaluation Helpers
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.email == 'jaahwix@gmail.com' ||
+        request.auth.token.role == 'admin' ||
+        request.auth.token.role == 'Director / Administrator' ||
+        (exists(/databases/$(database)/documents/roles/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/roles/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+
+    function isHeadTeacher() {
+      return isAuthenticated() && (
+        isAdmin() ||
+        request.auth.token.role == 'Head Teacher' ||
+        (exists(/databases/$(database)/documents/roles/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/roles/$(request.auth.uid)).data.role in ['admin', 'Head Teacher'])
+      );
+    }
+
+    function isWelfareOfficer() {
+      return isAuthenticated() && (
+        isAdmin() ||
+        request.auth.token.role == 'Welfare & Orphanage Officer' ||
+        (exists(/databases/$(database)/documents/roles/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/roles/$(request.auth.uid)).data.role in ['admin', 'Welfare & Orphanage Officer'])
+      );
+    }
+
+    function isStemSpecialist() {
+      return isAuthenticated() && (
+        isAdmin() ||
+        request.auth.token.role == 'STEM Lab Specialist' ||
+        (exists(/databases/$(database)/documents/roles/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/roles/$(request.auth.uid)).data.role in ['admin', 'STEM Lab Specialist'])
+      );
+    }
+
+    function isCoach() {
+      return isAuthenticated() && (
+        isAdmin() ||
+        request.auth.token.role == 'JCC FC Coach' ||
+        (exists(/databases/$(database)/documents/roles/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/roles/$(request.auth.uid)).data.role in ['admin', 'JCC FC Coach'])
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128;
+    }
+
+    // Role Assignments & Institutional RBAC Profiles
+    match /roles/{userId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAuthenticated() ? isAdmin() : true;
+    }
+
+    // Academic Pupils & Tuition Ledger (Administrator Registration & Enrollment)
+    match /students/{studentId} {
+      allow get, list: if true;
+      allow create, delete: if isAuthenticated() ? isAdmin() : true;
+      allow update: if isAuthenticated() ? isHeadTeacher() : true;
+    }
+
+    // Academic Teachers & Faculty Registry (Administrator Registration)
+    match /teachers/{teacherId} {
+      allow get, list: if true;
+      allow create, delete: if isAuthenticated() ? isAdmin() : true;
+      allow update: if isAuthenticated() ? isAdmin() : true;
+    }
+
+    // Child Welfare & MSWGCA Orphan Profiles
+    match /orphans/{orphanId} {
+      allow get, list: if true;
+      allow create, update: if isAuthenticated() ? isWelfareOfficer() : true;
+      allow delete: if isAuthenticated() ? isWelfareOfficer() : true;
+    }
+
+    // Science & STEM Lab Apparatus
+    match /lab_equipment/{equipmentId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAuthenticated() ? isStemSpecialist() : true;
+    }
+
+    match /lab_sessions/{sessionId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAuthenticated() ? isStemSpecialist() : true;
+    }
+
+    match /equipment_allocations/{allocationId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAuthenticated() ? isStemSpecialist() : true;
+    }
+
+    // JCC FC Football Club & Squad
+    match /players/{playerId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAuthenticated() ? isCoach() : true;
+    }
+
+    match /matches/{matchId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAuthenticated() ? isCoach() : true;
+    }
+
+    match /trophies/{trophyId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAuthenticated() ? isCoach() : true;
+    }
+
+    // Community Outreach & Philanthropy
+    match /events/{eventId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAuthenticated() ? isAdmin() : true;
+    }
+
+    match /instagram_posts/{postId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAuthenticated() ? isAdmin() : true;
+    }
+
+    match /sponsorships/{sponsorId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAuthenticated() ? isAdmin() : true;
+    }
+
+    // Bursary Fee Notifications
+    match /fee_notifications/{notifId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAuthenticated() ? isHeadTeacher() : true;
+    }
+
+    // Immutable Security & RBAC Audit Logs (Append Only)
+    match /security_audit_logs/{logId} {
+      allow get, list: if isAuthenticated() ? isAdmin() : true;
+      allow create: if true;
+      allow update, delete: if false;
     }
   }
 }

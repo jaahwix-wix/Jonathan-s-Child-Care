@@ -22,12 +22,15 @@ import {
   BarChart3,
   Check,
   AlertCircle,
+  Lock,
 } from 'lucide-react';
-import { Player, Match, Trophy as TrophyType } from '../types';
+import { Player, Match, Trophy as TrophyType, UserSession, ThemeMode } from '../types';
 import { ASSET_IMAGES } from '../data/mockData';
 import { exportPlayersPdf } from '../utils/pdfExporter';
 import { JccFcSeasonAnalytics } from './JccFcSeasonAnalytics';
 import { FootballSquadHierarchyTreeView } from './FootballSquadHierarchyTreeView';
+import { hasPermission } from '../services/authService';
+import { AccessRestrictedBanner } from './AccessRestrictedBanner';
 
 interface JccFcManagementProps {
   players: Player[];
@@ -40,6 +43,9 @@ interface JccFcManagementProps {
   onUpdateMatch?: (match: Match) => void;
   onDeleteMatch?: (matchId: string) => void;
   searchQuery: string;
+  currentUser?: UserSession;
+  onOpenPrivilegeModal?: () => void;
+  themeMode?: ThemeMode;
 }
 
 export const JccFcManagement: React.FC<JccFcManagementProps> = ({
@@ -53,6 +59,9 @@ export const JccFcManagement: React.FC<JccFcManagementProps> = ({
   onUpdateMatch,
   onDeleteMatch,
   searchQuery,
+  currentUser,
+  onOpenPrivilegeModal,
+  themeMode,
 }) => {
   const [positionFilter, setPositionFilter] = useState<string>('All');
   const [selectedFormation, setSelectedFormation] = useState<'4-3-3' | '4-2-3-1' | '4-4-2'>('4-3-3');
@@ -359,6 +368,9 @@ export const JccFcManagement: React.FC<JccFcManagementProps> = ({
     }
   };
 
+  const canManagePlayers = currentUser ? hasPermission(currentUser, 'football:manage_players') : true;
+  const canLogMatches = currentUser ? hasPermission(currentUser, 'football:log_matches') : true;
+
   return (
     <div className="space-y-8 pb-12">
       {/* Toast Feedback */}
@@ -367,6 +379,17 @@ export const JccFcManagement: React.FC<JccFcManagementProps> = ({
           <CheckCircle2 className="w-5 h-5 text-white" />
           <span>{toastMessage}</span>
         </div>
+      )}
+
+      {/* RBAC Access Notice for Non-Coaching Staff */}
+      {!canManagePlayers && (
+        <AccessRestrictedBanner
+          actionName="JCC FC Football Squad Roster & Match Results Logging"
+          currentRole={currentUser ? currentUser.role : 'Public / Sponsor'}
+          requiredRole="JCC FC Coach / Technical Directorate"
+          onOpenPrivilegeModal={onOpenPrivilegeModal || (() => {})}
+          themeMode={themeMode || 'academic-light'}
+        />
       )}
 
       {/* Club Banner Header */}

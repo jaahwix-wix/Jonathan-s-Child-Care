@@ -19,6 +19,10 @@ import {
   Building2,
   Award,
   Layers,
+  Database,
+  Lock,
+  ShieldCheck,
+  LogOut,
 } from 'lucide-react';
 
 import {
@@ -31,6 +35,7 @@ import {
   ThemeMode,
 } from '../types';
 import { ASSET_IMAGES } from '../data/mockData';
+import { canAccessTab } from '../services/authService';
 import {
   exportStudentsPdf,
   exportPlayersPdf,
@@ -51,6 +56,8 @@ interface SidebarProps {
   allocations?: EquipmentAllocation[];
   themeMode: ThemeMode;
   onThemeChange: (theme: ThemeMode) => void;
+  onOpenPrivilegeModal?: () => void;
+  onSignOut?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -65,6 +72,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   allocations = [],
   themeMode,
   onThemeChange,
+  onOpenPrivilegeModal,
+  onSignOut,
 }) => {
   const [showPdfSection, setShowPdfSection] = useState(false);
 
@@ -130,6 +139,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       highlight: true,
       badge: 'Gemini AI',
       badgeColor: 'bg-amber-400 text-slate-950 font-bold',
+    },
+    {
+      id: 'supabase' as ModuleTab,
+      label: 'Supabase PostgreSQL',
+      shortLabel: 'Supabase Sync',
+      icon: Database,
+      badge: 'Cloud DB',
+      badgeColor: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40',
     },
   ];
 
@@ -249,6 +266,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
+              const access = canAccessTab(currentUser, item.id);
 
               return (
                 <button
@@ -258,6 +276,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-xs sm:text-sm transition-all text-left ${
                     isActive
                       ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20 border border-emerald-500 font-semibold'
+                      : !access.allowed
+                      ? themeMode === 'academic-light'
+                        ? 'text-slate-400 bg-slate-50/50 hover:bg-slate-100/50 opacity-75'
+                        : 'text-slate-500 bg-slate-900/40 hover:bg-slate-800/40 opacity-75'
                       : item.highlight
                       ? themeMode === 'academic-light'
                         ? 'bg-gradient-to-r from-amber-500/10 via-emerald-500/10 to-transparent text-amber-900 hover:bg-amber-100/60 border border-amber-300/60 font-semibold'
@@ -272,6 +294,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       className={`w-4 h-4 shrink-0 ${
                         isActive
                           ? 'text-white'
+                          : !access.allowed
+                          ? 'text-slate-400'
                           : item.highlight
                           ? themeMode === 'academic-light' ? 'text-amber-600' : 'text-amber-400'
                           : themeMode === 'academic-light' ? 'text-slate-500' : 'text-slate-400'
@@ -280,19 +304,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <span className="truncate">{item.label}</span>
                   </div>
 
-                  {item.badge && (
-                    <span
-                      className={`text-[10px] px-2 py-0.5 rounded-md border shrink-0 ${
-                        item.badgeColor || (
-                          themeMode === 'academic-light'
-                            ? 'bg-slate-100 text-slate-700 border-slate-200'
-                            : 'bg-slate-800 text-slate-300 border-slate-700'
-                        )
-                      }`}
-                    >
-                      {item.badge}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {!access.allowed && (
+                      <span className="text-[9px] font-mono flex items-center gap-0.5 text-slate-400 bg-slate-200/50 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+                        <Lock className="w-2.5 h-2.5" /> Locked
+                      </span>
+                    )}
+
+                    {access.allowed && access.readOnly && item.id !== 'overview' && item.id !== 'community' && (
+                      <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded border ${
+                        isActive
+                          ? 'bg-emerald-700/80 text-emerald-100 border-emerald-400/40'
+                          : themeMode === 'academic-light'
+                          ? 'bg-slate-100 text-slate-500 border-slate-200'
+                          : 'bg-slate-800 text-slate-400 border-slate-700'
+                      }`}>
+                        View
+                      </span>
+                    )}
+
+                    {item.badge && (
+                      <span
+                        className={`text-[10px] px-2 py-0.5 rounded-md border shrink-0 ${
+                          item.badgeColor || (
+                            themeMode === 'academic-light'
+                              ? 'bg-slate-100 text-slate-700 border-slate-200'
+                              : 'bg-slate-800 text-slate-300 border-slate-700'
+                          )
+                        }`}
+                      >
+                        {item.badge}
+                      </span>
+                    )}
+                  </div>
                 </button>
               );
             })}
@@ -443,11 +487,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
           themeMode === 'academic-light' ? 'border-slate-100 bg-slate-50/80' : 'border-slate-800/80 bg-slate-950/50'
         }`}>
           <div
-            className={`p-2.5 rounded-xl border flex items-center justify-between transition-all ${
+            onClick={onOpenPrivilegeModal}
+            className={`p-2.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all hover:scale-[1.01] ${
               themeMode === 'academic-light'
-                ? 'bg-white border-slate-200 shadow-xs'
-                : 'bg-slate-800/80 border-slate-700'
+                ? 'bg-white hover:bg-emerald-50/60 border-slate-200 shadow-xs'
+                : 'bg-slate-800/80 hover:bg-slate-800 border-slate-700'
             }`}
+            title="Inspect Active Privileges & RBAC Status"
           >
             <div className="flex items-center gap-2.5 min-w-0">
               <img
@@ -468,15 +514,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
             </div>
             <div className="shrink-0 text-right">
-              <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
-                themeMode === 'academic-light'
-                  ? 'bg-slate-100 text-slate-600 border border-slate-200'
-                  : 'bg-slate-900 text-slate-400 border border-slate-800'
-              }`}>
-                Bo, SL
+              <span className="text-[9px] px-1.5 py-0.5 rounded font-mono font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 flex items-center gap-0.5">
+                <ShieldCheck className="w-2.5 h-2.5" /> RBAC
               </span>
             </div>
           </div>
+
+          {onSignOut && (
+            <button
+              type="button"
+              onClick={onSignOut}
+              className={`w-full mt-2 py-1.5 px-3 rounded-xl border flex items-center justify-center gap-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                themeMode === 'academic-light'
+                  ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200'
+                  : 'bg-rose-950/40 hover:bg-rose-900/50 text-rose-300 border-rose-800/60'
+              }`}
+            >
+              <LogOut className="w-3.5 h-3.5 text-rose-500" />
+              <span>Sign Out & Lock System</span>
+            </button>
+          )}
         </div>
       </aside>
     </>

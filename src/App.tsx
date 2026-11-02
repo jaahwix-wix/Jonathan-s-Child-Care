@@ -9,6 +9,9 @@ import { JccFcManagement } from './components/JccFcManagement';
 import { CommunityEventsHub } from './components/CommunityEventsHub';
 import { SponsorshipPortal } from './components/SponsorshipPortal';
 import { AiCommandCenter } from './components/AiCommandCenter';
+import { SupabaseIntegrationHub } from './components/SupabaseIntegrationHub';
+import { PrivilegeManagerModal } from './components/PrivilegeManagerModal';
+import { LoginGateway } from './components/LoginGateway';
 
 import {
   ModuleTab,
@@ -27,11 +30,13 @@ import {
   FeeNotification,
   NotificationUrgency,
   ThemeMode,
+  Teacher,
 } from './types';
 
 import {
   DEFAULT_USERS,
   ASSET_IMAGES,
+  INITIAL_TEACHERS,
 } from './data/mockData';
 
 import {
@@ -42,8 +47,42 @@ import {
   saveMultipleDocuments,
 } from './services/firestoreService';
 
+import {
+  syncRecordToSupabase,
+  deleteRecordFromSupabase,
+} from './services/supabaseService';
+
 export default function App() {
-  const [currentUser] = useState<UserSession>(DEFAULT_USERS[0]);
+  // User Authentication Gate (Mandatory login before accepting the system)
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return sessionStorage.getItem('jcc_authenticated') === 'true';
+  });
+
+  const [currentUser, setCurrentUser] = useState<UserSession>(() => {
+    const savedUserId = sessionStorage.getItem('jcc_current_user_id');
+    if (savedUserId) {
+      const found = DEFAULT_USERS.find(
+        (u) => u.id === savedUserId || u.email.toLowerCase() === savedUserId.toLowerCase()
+      );
+      if (found) return found;
+    }
+    return DEFAULT_USERS[0];
+  });
+
+  const handleLoginSuccess = (user: UserSession) => {
+    setCurrentUser(user);
+    setIsAuthenticated(true);
+    sessionStorage.setItem('jcc_authenticated', 'true');
+    sessionStorage.setItem('jcc_current_user_id', user.id);
+  };
+
+  const handleSignOut = () => {
+    setIsAuthenticated(false);
+    sessionStorage.removeItem('jcc_authenticated');
+    sessionStorage.removeItem('jcc_current_user_id');
+  };
+
+  const [isPrivilegeModalOpen, setIsPrivilegeModalOpen] = useState<boolean>(false);
 
   // Theme Management (Defaulting to Academic Light)
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
@@ -73,10 +112,18 @@ export default function App() {
   const [sponsorships, setSponsorships] = useState<Sponsorship[]>([]);
   const [notifications, setNotifications] = useState<FeeNotification[]>([]);
   const [trophies, setTrophies] = useState<Trophy[]>([]);
+  const [teachers, setTeachers] = useState<Teacher[]>(INITIAL_TEACHERS);
 
   // Firestore Real-Time Subscriptions
   useEffect(() => {
     const unsubStudents = subscribeToCollection<Student>(COLLECTIONS.STUDENTS, setStudents);
+    const unsubTeachers = subscribeToCollection<Teacher>(COLLECTIONS.TEACHERS, (data) => {
+      if (data && data.length > 0) {
+        setTeachers(data);
+      } else {
+        setTeachers(INITIAL_TEACHERS);
+      }
+    });
     const unsubOrphans = subscribeToCollection<OrphanRecord>(COLLECTIONS.ORPHANS, setOrphans);
     const unsubEquipment = subscribeToCollection<LabEquipment>(COLLECTIONS.LAB_EQUIPMENT, setLabEquipment);
     const unsubSessions = subscribeToCollection<LabSession>(COLLECTIONS.LAB_SESSIONS, setLabSessions);
@@ -91,6 +138,7 @@ export default function App() {
 
     return () => {
       unsubStudents();
+      unsubTeachers();
       unsubOrphans();
       unsubEquipment();
       unsubSessions();
@@ -105,36 +153,61 @@ export default function App() {
     };
   }, []);
 
-  // Student Firestore Handlers
+  // Student Firestore & Supabase Handlers
   const handleAddStudent = async (newStudent: Student) => {
     setStudents((prev) => [newStudent, ...prev.filter((s) => s.id !== newStudent.id)]);
     await saveDocument(COLLECTIONS.STUDENTS, newStudent);
+    syncRecordToSupabase('students', newStudent);
   };
 
   const handleUpdateStudent = async (updatedStudent: Student) => {
     setStudents((prev) => prev.map((s) => (s.id === updatedStudent.id ? updatedStudent : s)));
     await saveDocument(COLLECTIONS.STUDENTS, updatedStudent);
+    syncRecordToSupabase('students', updatedStudent);
   };
 
   const handleDeleteStudent = async (studentId: string) => {
     setStudents((prev) => prev.filter((s) => s.id !== studentId));
     await removeDocument(COLLECTIONS.STUDENTS, studentId);
+    deleteRecordFromSupabase('students', studentId);
   };
 
-  // Fee Notification Firestore Handlers
+  // Teacher Firestore & Management Handlers
+  const handleAddTeacher = async (newTeacher: Teacher) => {
+    setTeachers((prev) => [newTeacher, ...prev.filter((t) => t.id !== newTeacher.id)]);
+    await saveDocument(COLLECTIONS.TEACHERS, newTeacher);
+    syncRecordToSupabase('teachers' as any, newTeacher);
+  };
+
+  const handleUpdateTeacher = async (updatedTeacher: Teacher) => {
+    setTeachers((prev) => prev.map((t) => (t.id === updatedTeacher.id ? updatedTeacher : t)));
+    await saveDocument(COLLECTIONS.TEACHERS, updatedTeacher);
+    syncRecordToSupabase('teachers' as any, updatedTeacher);
+  };
+
+  const handleDeleteTeacher = async (teacherId: string) => {
+    setTeachers((prev) => prev.filter((t) => t.id !== teacherId));
+    await removeDocument(COLLECTIONS.TEACHERS, teacherId);
+    deleteRecordFromSupabase('teachers' as any, teacherId);
+  };
+
+  // Fee Notification Firestore & Supabase Handlers
   const handleAddNotification = async (notif: FeeNotification) => {
     setNotifications((prev) => [notif, ...prev.filter((n) => n.id !== notif.id)]);
     await saveDocument(COLLECTIONS.FEE_NOTIFICATIONS, notif);
+    syncRecordToSupabase('fee_notifications', notif);
   };
 
   const handleUpdateNotification = async (updatedNotif: FeeNotification) => {
     setNotifications((prev) => prev.map((n) => (n.id === updatedNotif.id ? updatedNotif : n)));
     await saveDocument(COLLECTIONS.FEE_NOTIFICATIONS, updatedNotif);
+    syncRecordToSupabase('fee_notifications', updatedNotif);
   };
 
   const handleDeleteNotification = async (notifId: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== notifId));
     await removeDocument(COLLECTIONS.FEE_NOTIFICATIONS, notifId);
+    deleteRecordFromSupabase('fee_notifications', notifId);
   };
 
   const handleBatchDispatch = async (urgencyFilter?: NotificationUrgency) => {
@@ -153,89 +226,110 @@ export default function App() {
     const affected = updated.filter((n) => !urgencyFilter || n.urgency === urgencyFilter);
     if (affected.length > 0) {
       await saveMultipleDocuments(COLLECTIONS.FEE_NOTIFICATIONS, affected);
+      affected.forEach((n) => syncRecordToSupabase('fee_notifications', n));
     }
   };
 
-  // Orphan Firestore Handlers
+  // Orphan Firestore & Supabase Handlers
   const handleAddOrphan = async (newOrphan: OrphanRecord) => {
     setOrphans((prev) => [newOrphan, ...prev.filter((o) => o.id !== newOrphan.id)]);
     await saveDocument(COLLECTIONS.ORPHANS, newOrphan);
+    syncRecordToSupabase('orphans', newOrphan);
   };
 
   const handleUpdateOrphan = async (updatedOrphan: OrphanRecord) => {
     setOrphans((prev) => prev.map((o) => (o.id === updatedOrphan.id ? updatedOrphan : o)));
     await saveDocument(COLLECTIONS.ORPHANS, updatedOrphan);
+    syncRecordToSupabase('orphans', updatedOrphan);
   };
 
   // Science Lab Apparatus & Session Handlers
   const handleAddEquipment = async (item: LabEquipment) => {
     setLabEquipment((prev) => [item, ...prev.filter((e) => e.id !== item.id)]);
     await saveDocument(COLLECTIONS.LAB_EQUIPMENT, item);
+    syncRecordToSupabase('lab_equipment', item);
   };
 
   const handleAddLabSession = async (session: LabSession) => {
     setLabSessions((prev) => [session, ...prev.filter((s) => s.id !== session.id)]);
     await saveDocument(COLLECTIONS.LAB_SESSIONS, session);
+    syncRecordToSupabase('lab_sessions', session);
   };
 
   // Science Lab Resource Allocation Handlers
   const handleAddAllocation = async (newAlloc: EquipmentAllocation) => {
     setAllocations((prev) => [newAlloc, ...prev.filter((a) => a.id !== newAlloc.id)]);
     await saveDocument(COLLECTIONS.EQUIPMENT_ALLOCATIONS, newAlloc);
+    syncRecordToSupabase('equipment_allocations', newAlloc);
   };
 
   const handleUpdateAllocation = async (updatedAlloc: EquipmentAllocation) => {
     setAllocations((prev) => prev.map((a) => (a.id === updatedAlloc.id ? updatedAlloc : a)));
     await saveDocument(COLLECTIONS.EQUIPMENT_ALLOCATIONS, updatedAlloc);
+    syncRecordToSupabase('equipment_allocations', updatedAlloc);
   };
 
   const handleDeleteAllocation = async (allocId: string) => {
     setAllocations((prev) => prev.filter((a) => a.id !== allocId));
     await removeDocument(COLLECTIONS.EQUIPMENT_ALLOCATIONS, allocId);
+    deleteRecordFromSupabase('equipment_allocations', allocId);
   };
 
   // JCC FC Player Handlers
   const handleAddPlayer = async (player: Player) => {
     setPlayers((prev) => [player, ...prev.filter((p) => p.id !== player.id)]);
     await saveDocument(COLLECTIONS.PLAYERS, player);
+    syncRecordToSupabase('players', player);
   };
 
   const handleUpdatePlayer = async (updatedPlayer: Player) => {
     setPlayers((prev) => prev.map((p) => (p.id === updatedPlayer.id ? updatedPlayer : p)));
     await saveDocument(COLLECTIONS.PLAYERS, updatedPlayer);
+    syncRecordToSupabase('players', updatedPlayer);
   };
 
   const handleDeletePlayer = async (playerId: string) => {
     setPlayers((prev) => prev.filter((p) => p.id !== playerId));
     await removeDocument(COLLECTIONS.PLAYERS, playerId);
+    deleteRecordFromSupabase('players', playerId);
   };
 
   // JCC FC Match Handlers
   const handleAddMatch = async (match: Match) => {
     setMatches((prev) => [match, ...prev.filter((m) => m.id !== match.id)]);
     await saveDocument(COLLECTIONS.MATCHES, match);
+    syncRecordToSupabase('matches', match);
   };
 
   const handleUpdateMatch = async (updatedMatch: Match) => {
     setMatches((prev) => prev.map((m) => (m.id === updatedMatch.id ? updatedMatch : m)));
     await saveDocument(COLLECTIONS.MATCHES, updatedMatch);
+    syncRecordToSupabase('matches', updatedMatch);
   };
 
   const handleDeleteMatch = async (matchId: string) => {
     setMatches((prev) => prev.filter((m) => m.id !== matchId));
     await removeDocument(COLLECTIONS.MATCHES, matchId);
+    deleteRecordFromSupabase('matches', matchId);
   };
 
   // Event & Sponsorship Handlers
   const handleAddEvent = async (evt: CommunityEvent) => {
     setEvents((prev) => [evt, ...prev.filter((e) => e.id !== evt.id)]);
     await saveDocument(COLLECTIONS.EVENTS, evt);
+    syncRecordToSupabase('community_events', evt);
   };
 
   const handleAddSponsorship = async (spon: Sponsorship) => {
     setSponsorships((prev) => [spon, ...prev.filter((s) => s.id !== spon.id)]);
     await saveDocument(COLLECTIONS.SPONSORSHIPS, spon);
+    syncRecordToSupabase('sponsorships', spon);
   };
+
+  // Mandatory Authentication Gate: user must log in before entering the system
+  if (!isAuthenticated) {
+    return <LoginGateway onLoginSuccess={handleLoginSuccess} />;
+  }
 
   // Determine root theme class names & layout styling with white default background
   const themeClasses =
@@ -260,6 +354,8 @@ export default function App() {
         allocations={allocations}
         themeMode={themeMode}
         onThemeChange={handleThemeChange}
+        onOpenPrivilegeModal={() => setIsPrivilegeModalOpen(true)}
+        onSignOut={handleSignOut}
       />
 
       {/* Main Right-Hand Workspace Area */}
@@ -274,6 +370,8 @@ export default function App() {
           onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
           themeMode={themeMode}
           onThemeChange={handleThemeChange}
+          onOpenPrivilegeModal={() => setIsPrivilegeModalOpen(true)}
+          onSignOut={handleSignOut}
         />
 
         {/* Main Workspace Body */}
@@ -293,15 +391,22 @@ export default function App() {
           {activeTab === 'school' && (
             <SchoolManagement
               students={students}
+              teachers={teachers}
               notifications={notifications}
               onAddStudent={handleAddStudent}
               onUpdateStudent={handleUpdateStudent}
               onDeleteStudent={handleDeleteStudent}
+              onAddTeacher={handleAddTeacher}
+              onUpdateTeacher={handleUpdateTeacher}
+              onDeleteTeacher={handleDeleteTeacher}
               onAddNotification={handleAddNotification}
               onUpdateNotification={handleUpdateNotification}
               onDeleteNotification={handleDeleteNotification}
               onBatchDispatch={handleBatchDispatch}
               searchQuery={searchQuery}
+              currentUser={currentUser}
+              onOpenPrivilegeModal={() => setIsPrivilegeModalOpen(true)}
+              themeMode={themeMode}
             />
           )}
 
@@ -330,6 +435,9 @@ export default function App() {
               onUpdateAllocation={handleUpdateAllocation}
               onDeleteAllocation={handleDeleteAllocation}
               searchQuery={searchQuery}
+              currentUser={currentUser}
+              onOpenPrivilegeModal={() => setIsPrivilegeModalOpen(true)}
+              themeMode={themeMode}
             />
           )}
 
@@ -345,6 +453,9 @@ export default function App() {
               onUpdateMatch={handleUpdateMatch}
               onDeleteMatch={handleDeleteMatch}
               searchQuery={searchQuery}
+              currentUser={currentUser}
+              onOpenPrivilegeModal={() => setIsPrivilegeModalOpen(true)}
+              themeMode={themeMode}
             />
           )}
 
@@ -370,7 +481,37 @@ export default function App() {
               players={players}
             />
           )}
+
+          {activeTab === 'supabase' && (
+            <SupabaseIntegrationHub
+              students={students}
+              orphans={orphans}
+              labEquipment={labEquipment}
+              labSessions={labSessions}
+              allocations={allocations}
+              players={players}
+              matches={matches}
+              events={events}
+              sponsorships={sponsorships}
+              notifications={notifications}
+              currentUser={currentUser}
+              onOpenPrivilegeModal={() => setIsPrivilegeModalOpen(true)}
+              themeMode={themeMode}
+            />
+          )}
         </main>
+
+        {/* Global Privilege & RBAC Management Modal */}
+        <PrivilegeManagerModal
+          isOpen={isPrivilegeModalOpen}
+          onClose={() => setIsPrivilegeModalOpen(false)}
+          currentUser={currentUser}
+          onSwitchUser={(user) => {
+            setCurrentUser(user);
+            sessionStorage.setItem('jcc_current_user_id', user.id);
+          }}
+          themeMode={themeMode}
+        />
 
         {/* System Footer */}
         <footer className={`backdrop-blur-md border-t py-6 px-4 mt-auto transition-colors ${

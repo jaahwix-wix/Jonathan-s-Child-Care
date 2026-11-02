@@ -6,7 +6,8 @@ export type ModuleTab =
   | 'jcc-fc'
   | 'community'
   | 'sponsorship'
-  | 'ai-hub';
+  | 'ai-hub'
+  | 'supabase';
 
 export type UserRole =
   | 'Director / Administrator'
@@ -16,6 +17,57 @@ export type UserRole =
   | 'STEM Lab Specialist'
   | 'Community Sponsor';
 
+export type ClearanceLevel =
+  | 'Executive Board (Level 4)'
+  | 'Senior Administration (Level 3)'
+  | 'Department Specialist (Level 2)'
+  | 'Public / Sponsor (Level 1)';
+
+export type Permission =
+  // School & Academic
+  | 'students:view'
+  | 'students:create'
+  | 'students:edit'
+  | 'students:delete'
+  | 'students:grades_edit'
+  | 'teachers:view'
+  | 'teachers:create'
+  | 'teachers:edit'
+  | 'teachers:delete'
+  | 'fees:view'
+  | 'fees:manage'
+  | 'fees:dispatch'
+  // Orphanage & Child Welfare
+  | 'orphans:view'
+  | 'orphans:create'
+  | 'orphans:edit'
+  | 'orphans:delete'
+  | 'orphans:confidential_notes'
+  // Science & STEM Lab
+  | 'science:view'
+  | 'science:manage_equipment'
+  | 'science:allocate'
+  | 'science:schedule'
+  // Football Club JCC FC
+  | 'football:view'
+  | 'football:manage_players'
+  | 'football:log_matches'
+  // Sponsorships & Grants
+  | 'sponsorships:view'
+  | 'sponsorships:manage'
+  // Community Events
+  | 'community:view'
+  | 'community:manage'
+  // AI Command Center
+  | 'ai:access'
+  | 'ai:execute_prompts'
+  // Database & System Administration
+  | 'database:view'
+  | 'database:manage_supabase'
+  | 'system:manage_users'
+  | 'system:audit_logs'
+  | 'system:full_control';
+
 export interface UserSession {
   id: string;
   name: string;
@@ -24,6 +76,22 @@ export interface UserSession {
   avatar: string;
   privileges: string[];
   department: string;
+  clearanceLevel: ClearanceLevel;
+  permissions: Permission[];
+  badgeColor: string;
+  isVerified?: boolean;
+}
+
+export interface SecurityAuditEntry {
+  id: string;
+  timestamp: string;
+  userId: string;
+  userName: string;
+  role: UserRole;
+  action: string;
+  module: ModuleTab;
+  status: 'Authorized' | 'Denied' | 'Override';
+  details?: string;
 }
 
 export interface SubjectGrade {
@@ -445,7 +513,26 @@ export interface LabStation {
   capacity: number;
   stationType: 'Optics & Light' | 'Titration & Chemistry' | 'Electronics & Solar' | 'General Microscope' | 'Geometry & Math';
 }
+export interface Teacher {
+  id: string;
+  employeeId: string;
+  name: string;
+  email: string;
+  phone: string;
+  gender: 'Female' | 'Male';
+  schoolTier: SchoolTier | 'All Tiers';
+  assignedGrades: string[];
+  subjects: string[];
+  qualification: string;
+  employmentType: 'Full-Time' | 'Part-Time' | 'Contract' | 'Volunteer';
+  role: 'Class Teacher' | 'Subject Teacher' | 'Senior Master' | 'Head of Department' | 'Lab Instructor';
+  joiningDate: string;
+  status: 'Active' | 'On Leave' | 'Probation';
+  monthlySalarySLL?: number;
+  nationalIdNumber?: string;
+  address?: string;
+  avatar: string;
+  notes?: string;
+}
 
 export type ThemeMode = 'academic-light' | 'midnight-emerald' | 'deep-navy';
-
-

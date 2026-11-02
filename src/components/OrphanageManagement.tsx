@@ -47,6 +47,7 @@ import {
 } from '../types';
 import { exportOrphanWelfarePdf, exportOrphanRosterPdf } from '../utils/pdfExporter';
 import { OrphanageWelfareTreeView } from './OrphanageWelfareTreeView';
+import { hasPermission } from '../services/authService';
 
 interface OrphanageManagementProps {
   orphans: OrphanRecord[];
@@ -71,9 +72,14 @@ export const OrphanageManagement: React.FC<OrphanageManagementProps> = ({
   const [selectedTier, setSelectedTier] = useState<string>('All');
   const [viewMode, setViewMode] = useState<'treeview' | 'cards' | 'table'>('treeview');
   
-  // Access Control & Privacy State (Unrestricted Direct Access)
-  const [isPrivacyMasked, setIsPrivacyMasked] = useState<boolean>(false);
-  const [isSuperAuthorized] = useState<boolean>(true);
+  // Real-time RBAC Authorization Checks
+  const hasConfidentialAccess = hasPermission(currentUser, 'orphans:confidential_notes');
+  const canCreateOrphan = hasPermission(currentUser, 'orphans:create');
+  const canEditOrphan = hasPermission(currentUser, 'orphans:edit');
+
+  // Privacy Masking State (enforces privacy shield if user lacks confidential clearance)
+  const [isPrivacyMasked, setIsPrivacyMasked] = useState<boolean>(!hasConfidentialAccess);
+  const isSuperAuthorized = hasConfidentialAccess;
 
   // Modals
   const [selectedOrphan, setSelectedOrphan] = useState<OrphanRecord | null>(null);
@@ -321,7 +327,12 @@ export const OrphanageManagement: React.FC<OrphanageManagementProps> = ({
 
   const maskSecret = (val: string | undefined, maskType: 'phone' | 'id' | 'text' = 'text') => {
     if (!val) return '—';
-    if (!isPrivacyMasked || isSuperAuthorized) return val;
+    if (!hasConfidentialAccess) {
+      if (maskType === 'phone') return val.slice(0, 5) + ' ••• ••• (Restricted)';
+      if (maskType === 'id') return val.slice(0, 6) + '•••••• [Welfare Officer Clearance Required]';
+      return '[CONFIDENTIAL: Restricted to Social Welfare Officer & MSWGCA Directives]';
+    }
+    if (!isPrivacyMasked) return val;
     if (maskType === 'phone') {
       return val.slice(0, 7) + ' ••• •••';
     }
@@ -333,6 +344,20 @@ export const OrphanageManagement: React.FC<OrphanageManagementProps> = ({
 
   return (
     <div className="space-y-6 pb-12" id="orphanage-management-root">
+      {!hasConfidentialAccess && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3.5 flex items-center justify-between text-xs text-amber-300">
+          <div className="flex items-center gap-2.5">
+            <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>
+              <strong>Safeguarding & Privacy Protection Active:</strong> As <strong className="text-white">{currentUser.role}</strong>, sensitive child psycho-social notes and health history are redacted.
+            </span>
+          </div>
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-200 border border-amber-500/30 font-bold shrink-0">
+            Read-Only Safeguard
+          </span>
+        </div>
+      )}
+
       {/* Top Security & Safeguarding Banner */}
       <div className="bg-gradient-to-r from-slate-900 via-rose-950/40 to-slate-900 border border-rose-900/40 rounded-2xl p-6 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-rose-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
@@ -367,19 +392,23 @@ export const OrphanageManagement: React.FC<OrphanageManagementProps> = ({
                   {isPrivacyMasked ? 'Child Privacy Shield Active' : 'Direct Full Access'}
                 </span>
                 <span className="block text-[10px] text-slate-400">
-                  {isPrivacyMasked ? 'Sensitive IDs & contacts masked' : 'All confidential records visible'}
+                  {hasConfidentialAccess
+                    ? (isPrivacyMasked ? 'Sensitive IDs & contacts masked' : 'All confidential records visible')
+                    : 'Restricted by institutional policy'}
                 </span>
               </div>
-              <button
-                onClick={() => setIsPrivacyMasked(!isPrivacyMasked)}
-                className={`ml-2 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                  isPrivacyMasked
-                    ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40'
-                    : 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/40'
-                }`}
-              >
-                {isPrivacyMasked ? 'Show Full Records' : 'Mask Records'}
-              </button>
+              {hasConfidentialAccess && (
+                <button
+                  onClick={() => setIsPrivacyMasked(!isPrivacyMasked)}
+                  className={`ml-2 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                    isPrivacyMasked
+                      ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40'
+                      : 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/40'
+                  }`}
+                >
+                  {isPrivacyMasked ? 'Show Full Records' : 'Mask Records'}
+                </button>
+              )}
             </div>
 
             {/* Export Roster PDF */}
@@ -393,13 +422,23 @@ export const OrphanageManagement: React.FC<OrphanageManagementProps> = ({
             </button>
 
             {/* Add New Admission Button */}
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white text-xs font-bold transition-all shadow-md shadow-rose-950/40 border border-rose-400/30"
-            >
-              <Plus className="w-4 h-4" />
-              <span>New Orphan Admission</span>
-            </button>
+            {canCreateOrphan ? (
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white text-xs font-bold transition-all shadow-md shadow-rose-950/40 border border-rose-400/30"
+              >
+                <Plus className="w-4 h-4" />
+                <span>New Orphan Admission</span>
+              </button>
+            ) : (
+              <div
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-400 text-xs cursor-not-allowed"
+                title="Intake restricted: Requires Welfare & Orphanage Officer clearance"
+              >
+                <Lock className="w-3.5 h-3.5 text-slate-500" />
+                <span>Admission Restricted</span>
+              </div>
+            )}
           </div>
         </div>
 
